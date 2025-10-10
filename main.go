@@ -15,14 +15,19 @@ const (
 	KeyIDPathParam = "key_id"
 )
 
+func NewMux(cipher Cipher) *http.ServeMux {
+	mux := http.NewServeMux()
+	mux.HandleFunc(makeURL("PUT /v1/transit/encrypt/{%s}"), EncryptHandlerFunc(cipher))
+	mux.HandleFunc(makeURL("PUT /v1/transit/decrypt/{%s}"), DecryptHandlerFunc(cipher))
+	return mux
+}
+
 func Run(ctx context.Context) error {
 	cipher, err := NewSakuraKMS()
 	if err != nil {
 		return fmt.Errorf("failed to create cipher: %w", err)
 	}
-	mux := http.NewServeMux()
-	mux.HandleFunc(makeURL("PUT /v1/transit/encrypt/{%s}"), EncryptHandlerFunc(cipher))
-	mux.HandleFunc(makeURL("PUT /v1/transit/decrypt/{%s}"), DecryptHandlerFunc(cipher))
+	mux := NewMux(cipher)
 	sv := &http.Server{
 		Addr:    "127.0.0.1:8200",
 		Handler: mux,

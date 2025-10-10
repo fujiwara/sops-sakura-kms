@@ -3,7 +3,6 @@ package ssk_test
 import (
 	"context"
 	"encoding/base64"
-	"net/http"
 	"net/http/httptest"
 	"testing"
 
@@ -14,9 +13,7 @@ import (
 func TestVaultAPICompatibility(t *testing.T) {
 	// Setup mock server with mock cipher
 	cipher := &mockCipher{}
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /v1/transit/encrypt/{key_id}", ssk.EncryptHandlerFunc(cipher))
-	mux.HandleFunc("PUT /v1/transit/decrypt/{key_id}", ssk.DecryptHandlerFunc(cipher))
+	mux := ssk.NewMux(cipher)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -92,9 +89,7 @@ func TestVaultAPICompatibility(t *testing.T) {
 func TestVaultAPICompatibilityWithBase64(t *testing.T) {
 	// Setup mock server with mock cipher
 	cipher := &mockCipher{}
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /v1/transit/encrypt/{key_id}", ssk.EncryptHandlerFunc(cipher))
-	mux.HandleFunc("PUT /v1/transit/decrypt/{key_id}", ssk.DecryptHandlerFunc(cipher))
+	mux := ssk.NewMux(cipher)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
@@ -166,8 +161,7 @@ func TestVaultAPICompatibilityWithBase64(t *testing.T) {
 func TestVaultAPIErrorHandling(t *testing.T) {
 	// Setup mock server with mock cipher
 	cipher := &mockCipher{}
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /v1/transit/decrypt/{key_id}", ssk.DecryptHandlerFunc(cipher))
+	mux := ssk.NewMux(cipher)
 
 	server := httptest.NewServer(mux)
 	defer server.Close()

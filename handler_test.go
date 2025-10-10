@@ -27,8 +27,7 @@ func (m *mockCipher) Decrypt(ctx context.Context, keyID string, ciphertext strin
 
 func TestEncryptHandler(t *testing.T) {
 	cipher := &mockCipher{}
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /v1/transit/encrypt/{key_id}", ssk.EncryptHandlerFunc(cipher))
+	mux := ssk.NewMux(cipher)
 
 	tests := []struct {
 		name           string
@@ -88,8 +87,7 @@ func TestEncryptHandler(t *testing.T) {
 
 func TestEncryptHandlerInvalidRequest(t *testing.T) {
 	cipher := &mockCipher{}
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /v1/transit/encrypt/{key_id}", ssk.EncryptHandlerFunc(cipher))
+	mux := ssk.NewMux(cipher)
 
 	req := httptest.NewRequest("PUT", "/v1/transit/encrypt/test-key", bytes.NewReader([]byte("invalid json")))
 	rec := httptest.NewRecorder()
@@ -103,8 +101,7 @@ func TestEncryptHandlerInvalidRequest(t *testing.T) {
 
 func TestDecryptHandler(t *testing.T) {
 	cipher := &mockCipher{}
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /v1/transit/decrypt/{key_id}", ssk.DecryptHandlerFunc(cipher))
+	mux := ssk.NewMux(cipher)
 
 	plaintext1 := "Hello, World!"
 	plaintext2 := ""
@@ -169,8 +166,7 @@ func TestDecryptHandler(t *testing.T) {
 
 func TestDecryptHandlerInvalidCiphertext(t *testing.T) {
 	cipher := &mockCipher{}
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /v1/transit/decrypt/{key_id}", ssk.DecryptHandlerFunc(cipher))
+	mux := ssk.NewMux(cipher)
 
 	tests := []struct {
 		name        string
@@ -214,8 +210,7 @@ func TestDecryptHandlerInvalidCiphertext(t *testing.T) {
 
 func TestDecryptHandlerInvalidRequest(t *testing.T) {
 	cipher := &mockCipher{}
-	mux := http.NewServeMux()
-	mux.HandleFunc("PUT /v1/transit/decrypt/{key_id}", ssk.DecryptHandlerFunc(cipher))
+	mux := ssk.NewMux(cipher)
 
 	req := httptest.NewRequest("PUT", "/v1/transit/decrypt/test-key", bytes.NewReader([]byte("invalid json")))
 	rec := httptest.NewRecorder()
