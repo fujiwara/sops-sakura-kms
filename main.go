@@ -36,6 +36,19 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 		return fmt.Errorf("SAKURA_KMS_KEY_ID environment variable is required")
 	}
 
+	// Check if --hc-vault-transit is already specified
+	for _, arg := range sopsArgs {
+		if arg == "--hc-vault-transit" || strings.HasPrefix(arg, "--hc-vault-transit=") {
+			return fmt.Errorf("--hc-vault-transit should not be specified when using this wrapper; it will be set automatically from SAKURA_KMS_KEY_ID")
+		}
+	}
+
+	// Prepend --hc-vault-transit argument
+	vaultTransitURI := fmt.Sprintf("http://127.0.0.1:8200/v1/transit/encrypt/%s", keyID)
+	sopsArgs = append([]string{"--hc-vault-transit", vaultTransitURI}, sopsArgs...)
+
+	slog.Info("Starting Vault-compatible API server for Sakura KMS", "key_id", keyID, "addr", "127.0.0.1:8200")
+
 	// 1. Create and start server
 	cipher, err := NewSakuraKMS()
 	if err != nil {
@@ -52,6 +65,8 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	if err := waitForServer(ctx, "http://127.0.0.1:8200/health"); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
+
+	slog.Info("Server started successfully, executing SOPS", "command", "sops", "args", sopsArgs)
 
 	// 3. Set environment variables for SOPS
 	env := append(os.Environ(),
@@ -126,7 +141,7 @@ func errorResponse(w http.ResponseWriter, err error, status int) {
 func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue("key_id")
-		slog.Info("encrypt", "key_id", keyID)
+		slog.Info("Encrypting data with Sakura KMS", "key_id", keyID)
 		req := &VaultEncryptRequest{}
 		err := json.NewDecoder(r.Body).Decode(req)
 		if err != nil {
@@ -155,7 +170,7 @@ func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue("key_id")
-		slog.Info("decrypt", "key_id", keyID)
+		slog.Info("Decrypting data with Sakura KMS", "key_id", keyID)
 		req := &VaultDecryptRequest{}
 		err := json.NewDecoder(r.Body).Decode(req)
 		if err != nil {
