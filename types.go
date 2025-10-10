@@ -1,7 +1,7 @@
 package ssk
 
 type VaultEncryptRequest struct {
-	Plaintext []byte `json:"plaintext"`
+	Plaintext string `json:"plaintext"`
 }
 
 type VaultEncryptResponse struct {
@@ -13,5 +13,5 @@ type VaultDecryptRequest struct {
 }
 
 type VaultDecryptResponse struct {
-	Plaintext []byte `json:"plaintext"`
+	Plaintext string `json:"plaintext"`
 }

@@ -2,6 +2,7 @@ package ssk
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -20,8 +21,8 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("failed to create cipher: %w", err)
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc(makeURL("PUT /v1/transit/encrypt/{%s}"), encryptHandlerFunc(cipher))
-	mux.HandleFunc(makeURL("PUT /v1/transit/decrypt/{%s}"), decryptHandlerFunc(cipher))
+	mux.HandleFunc(makeURL("PUT /v1/transit/encrypt/{%s}"), EncryptHandlerFunc(cipher))
+	mux.HandleFunc(makeURL("PUT /v1/transit/decrypt/{%s}"), DecryptHandlerFunc(cipher))
 	sv := &http.Server{
 		Addr:    "127.0.0.1:8200",
 		Handler: mux,
@@ -53,7 +54,7 @@ func errorResponse(w http.ResponseWriter, err error, status int) {
 	})
 }
 
-func encryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
+func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue("key_id")
 		slog.Info("encrypt", "key_id", keyID)
@@ -63,11 +64,13 @@ func encryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 			errorResponse(w, err, http.StatusBadRequest)
 			return
 		}
+		// Decode base64-encoded plaintext
+		plaintext, err := base64.StdEncoding.DecodeString(req.Plaintext)
 		if err != nil {
-			errorResponse(w, err, http.StatusInternalServerError)
+			errorResponse(w, fmt.Errorf("invalid base64 plaintext: %w", err), http.StatusBadRequest)
 			return
 		}
-		ciphertext, err := cipher.Encrypt(r.Context(), keyID, req.Plaintext)
+		ciphertext, err := cipher.Encrypt(r.Context(), keyID, plaintext)
 		if err != nil {
 			errorResponse(w, err, http.StatusInternalServerError)
 			return
@@ -80,7 +83,7 @@ func encryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func decryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
+func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue("key_id")
 		slog.Info("decrypt", "key_id", keyID)
@@ -100,8 +103,9 @@ func decryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 			errorResponse(w, err, http.StatusInternalServerError)
 			return
 		}
+		// Encode plaintext as base64 for response
 		res := &VaultDecryptResponse{
-			Plaintext: plaintext,
+			Plaintext: base64.StdEncoding.EncodeToString(plaintext),
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(res)
