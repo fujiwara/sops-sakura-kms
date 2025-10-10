@@ -9,12 +9,12 @@ import (
 )
 
 func TestRunWrapper_WithoutKeyID(t *testing.T) {
-	// Ensure SAKURA_KMS_KEY_ID is not set
+	// Ensure SAKURACLOUD_KMS_KEY_ID is not set
 	os.Unsetenv(ssk.EnvKeyID)
 
 	err := ssk.RunWrapper(context.Background(), []string{"--version"})
 	if err == nil {
-		t.Error("expected error when SAKURA_KMS_KEY_ID is not set, got nil")
+		t.Error("expected error when SAKURACLOUD_KMS_KEY_ID is not set, got nil")
 	}
 
 	expectedMsg := ssk.EnvKeyID + " environment variable is required"
@@ -24,7 +24,7 @@ func TestRunWrapper_WithoutKeyID(t *testing.T) {
 }
 
 func TestRunWrapper_WithHcVaultTransitArg(t *testing.T) {
-	// Set SAKURA_KMS_KEY_ID for this test
+	// Set SAKURACLOUD_KMS_KEY_ID for this test
 	os.Setenv(ssk.EnvKeyID, "test-key")
 	defer os.Unsetenv(ssk.EnvKeyID)
 

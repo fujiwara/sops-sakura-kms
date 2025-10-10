@@ -16,7 +16,7 @@ The tool automatically:
 
 ### Wrapper Mode (Primary Use Case)
 The tool operates as a SOPS wrapper via `RunWrapper()` function:
-- Reads `SAKURA_KMS_KEY_ID` environment variable (12-digit Sakura Cloud resource ID as string)
+- Reads `SAKURACLOUD_KMS_KEY_ID` environment variable (12-digit Sakura Cloud resource ID as string)
 - Validates that `--hc-vault-transit` is not manually specified (returns error if it is)
 - Starts HTTP server on `127.0.0.1:8200` in background
 - Waits for server health check (30 retries × 100ms)
@@ -108,7 +108,7 @@ SOPS does not support passing `--hc-vault-transit` via environment variables. Th
 1. Command-line flag: `--hc-vault-transit <uri>`
 2. Configuration file: `.sops.yaml` with `hc_vault_transit_uri`
 
-Since we need dynamic configuration based on `SAKURA_KMS_KEY_ID`, the wrapper approach automatically injects the flag.
+Since we need dynamic configuration based on `SAKURACLOUD_KMS_KEY_ID`, the wrapper approach automatically injects the flag.
 
 ### Why Prevent Manual `--hc-vault-transit`?
 If users manually specify `--hc-vault-transit`, it conflicts with the wrapper's automatic configuration. The tool explicitly checks for this and returns an error to prevent confusion.
@@ -122,7 +122,7 @@ If users manually specify `--hc-vault-transit`, it conflicts with the wrapper's 
 ### Constants
 - `VaultPrefix = "vault:v1:"` - Required by SOPS for Vault Transit Engine compatibility
 - `KeyIDPathParam = "key_id"` - URL path parameter name
-- `EnvKeyID = "SAKURA_KMS_KEY_ID"` - Environment variable for KMS resource ID
+- `EnvKeyID = "SAKURACLOUD_KMS_KEY_ID"` - Environment variable for KMS resource ID
 - `ServerAddr = "127.0.0.1:8200"` - Standard Vault server address (localhost only)
 
 ## Go Version
