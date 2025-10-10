@@ -20,6 +20,7 @@ const (
 	ServerAddr     = "127.0.0.1:8200"
 )
 
+// NewMux creates a new HTTP ServeMux with Vault Transit Engine compatible API endpoints.
 func NewMux(cipher Cipher) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", healthCheckHandler)
@@ -32,6 +33,9 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// RunWrapper starts a Vault Transit Engine compatible API server and executes SOPS command.
+// It automatically configures SOPS to use Sakura Cloud KMS via --hc-vault-transit flag.
+// Requires SAKURA_KMS_KEY_ID environment variable to be set.
 func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	keyID := os.Getenv(EnvKeyID)
 	if keyID == "" {
@@ -116,6 +120,8 @@ func waitForServer(ctx context.Context, healthURL string) error {
 	return fmt.Errorf("server did not become healthy")
 }
 
+// Run starts a Vault Transit Engine compatible API server for Sakura Cloud KMS.
+// The server listens on 127.0.0.1:8200 and provides encrypt/decrypt endpoints.
 func Run(ctx context.Context) error {
 	cipher, err := NewSakuraKMS()
 	if err != nil {
@@ -155,6 +161,7 @@ func errorResponse(w http.ResponseWriter, err error, status int) {
 	}
 }
 
+// EncryptHandlerFunc returns an HTTP handler for Vault Transit Engine encrypt endpoint.
 func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue("key_id")
@@ -186,6 +193,7 @@ func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// DecryptHandlerFunc returns an HTTP handler for Vault Transit Engine decrypt endpoint.
 func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue("key_id")
