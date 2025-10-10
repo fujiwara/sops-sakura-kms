@@ -31,8 +31,8 @@ Set the following environment variables:
 export SAKURACLOUD_ACCESS_TOKEN="your-access-token"
 export SAKURACLOUD_ACCESS_TOKEN_SECRET="your-access-token-secret"
 
-# Sakura Cloud KMS Key ID
-export SAKURA_KMS_KEY_ID="your-kms-key-id"
+# Sakura Cloud KMS Resource ID (12-digit number as string, e.g., 123456789012)
+export SAKURA_KMS_KEY_ID="123456789012"
 ```
 
 ## Usage
@@ -87,7 +87,7 @@ The tool provides the following Vault Transit Engine compatible endpoints:
 go test ./...
 
 # Run tests with actual Sakura Cloud KMS (requires credentials and KEY_ID)
-KEY_ID=your-key-id go test ./...
+KEY_ID=123456789012 go test ./...
 ```
 
 ### Building
