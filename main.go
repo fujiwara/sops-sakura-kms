@@ -60,12 +60,24 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	mux := NewMux(cipher)
 	server := &http.Server{Addr: ServerAddr, Handler: mux}
 
-	go server.ListenAndServe()
+	errCh := make(chan error, 1)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			errCh <- err
+		}
+	}()
 	defer server.Shutdown(context.Background())
 
 	// 2. Wait for server to become healthy
 	if err := waitForServer(ctx, fmt.Sprintf("http://%s/health", ServerAddr)); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
+	}
+
+	// Check if server failed to start
+	select {
+	case err := <-errCh:
+		return fmt.Errorf("server failed to start: %w", err)
+	default:
 	}
 
 	slog.Info("Server started successfully, executing SOPS", "command", "sops", "args", sopsArgs)
@@ -131,14 +143,16 @@ func errorResponse(w http.ResponseWriter, err error, status int) {
 	slog.Error("error response", "status", status, "error", err)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(map[string]any{
+	if err := json.NewEncoder(w).Encode(map[string]any{
 		"errors": []map[string]any{
 			{
 				"status": status,
 				"detail": err.Error(),
 			},
 		},
-	})
+	}); err != nil {
+		slog.Error("failed to encode error response", "error", err)
+	}
 }
 
 func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
@@ -166,7 +180,9 @@ func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 			Ciphertext: VaultPrefix + ciphertext,
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(res)
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			slog.Error("failed to encode encrypt response", "error", err)
+		}
 	}
 }
 
@@ -195,6 +211,8 @@ func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 			Plaintext: base64.StdEncoding.EncodeToString(plaintext),
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(res)
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			slog.Error("failed to encode decrypt response", "error", err)
+		}
 	}
 }
