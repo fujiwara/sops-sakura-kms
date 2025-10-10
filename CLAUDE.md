@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-sops-sakura-kms is a SOPS wrapper that enables SOPS to use Sakura Cloud KMS for data key encryption. It acts as a Vault Transit Engine compatible HTTP server, allowing SOPS to encrypt and decrypt data keys using Sakura Cloud KMS through the `--hc-vault-transit` option.
+sops-sakura-kms is a SOPS wrapper that enables SOPS to use Sakura Cloud KMS for data key encryption. It acts as a Vault Transit Engine compatible HTTP server, allowing SOPS to encrypt and decrypt data keys using Sakura Cloud KMS through the `SOPS_VAULT_URIS` environment variable.
 
 The tool automatically:
 1. Starts a local Vault Transit Engine compatible HTTP server
-2. Configures SOPS with the correct `--hc-vault-transit` flag
+2. Configures SOPS with the correct `SOPS_VAULT_URIS` environment variable
 3. Executes SOPS with proper environment variables
 4. Handles encryption/decryption requests from SOPS using Sakura Cloud KMS
 
@@ -17,10 +17,9 @@ The tool automatically:
 ### Wrapper Mode (Primary Use Case)
 The tool operates as a SOPS wrapper via `RunWrapper()` function:
 - Reads `SAKURACLOUD_KMS_KEY_ID` environment variable (12-digit Sakura Cloud resource ID as string)
-- Validates that `--hc-vault-transit` is not manually specified (returns error if it is)
 - Starts HTTP server on `127.0.0.1:8200` in background
 - Waits for server health check (30 retries × 100ms)
-- Automatically injects `--hc-vault-transit http://127.0.0.1:8200/v1/transit/encrypt/{key_id}` argument
+- Automatically sets `SOPS_VAULT_URIS=http://127.0.0.1:8200/v1/transit/encrypt/{key_id}` environment variable
 - Sets `VAULT_ADDR` and `VAULT_TOKEN` environment variables
 - Executes SOPS command with all original arguments
 
@@ -88,7 +87,6 @@ goreleaser build --snapshot --clean
   - Tests base64 encoding/decoding flow matches Vault Transit Engine behavior
 - **wrapper_test.go**: `RunWrapper()` function tests
   - Tests environment variable validation
-  - Tests `--hc-vault-transit` conflict detection
   - Does not test full SOPS integration (requires SOPS binary)
 - **kms_test.go**: Integration tests with actual Sakura Cloud KMS
   - Requires `KEY_ID` environment variable (12-digit resource ID)
@@ -104,14 +102,10 @@ goreleaser build --snapshot --clean
 ## Important Design Decisions
 
 ### Why Wrapper Mode?
-SOPS does not support passing `--hc-vault-transit` via environment variables. The only ways to configure it are:
-1. Command-line flag: `--hc-vault-transit <uri>`
-2. Configuration file: `.sops.yaml` with `hc_vault_transit_uri`
+The wrapper approach allows dynamic configuration based on `SAKURACLOUD_KMS_KEY_ID` by automatically setting the `SOPS_VAULT_URIS` environment variable.
 
-Since we need dynamic configuration based on `SAKURACLOUD_KMS_KEY_ID`, the wrapper approach automatically injects the flag.
-
-### Why Prevent Manual `--hc-vault-transit`?
-If users manually specify `--hc-vault-transit`, it conflicts with the wrapper's automatic configuration. The tool explicitly checks for this and returns an error to prevent confusion.
+### Why Use SOPS_VAULT_URIS?
+SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Transit Engine URIs. Using this environment variable instead of command-line flags prevents issues with argument ordering when executing SOPS.
 
 ### Error Handling Best Practices
 - JSON encoding errors in response handlers are logged but not fatal (connection may be closed)
