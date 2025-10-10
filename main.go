@@ -34,24 +34,13 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // RunWrapper starts a Vault Transit Engine compatible API server and executes SOPS command.
-// It automatically configures SOPS to use Sakura Cloud KMS via --hc-vault-transit flag.
+// It automatically configures SOPS to use Sakura Cloud KMS via SOPS_VAULT_URIS environment variable.
 // Requires SAKURA_KMS_KEY_ID environment variable to be set.
 func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	keyID := os.Getenv(EnvKeyID)
 	if keyID == "" {
 		return fmt.Errorf("%s environment variable is required", EnvKeyID)
 	}
-
-	// Check if --hc-vault-transit is already specified
-	for _, arg := range sopsArgs {
-		if arg == "--hc-vault-transit" || strings.HasPrefix(arg, "--hc-vault-transit=") {
-			return fmt.Errorf("--hc-vault-transit should not be specified when using this wrapper; it will be set automatically from %s", EnvKeyID)
-		}
-	}
-
-	// Prepend --hc-vault-transit argument
-	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", ServerAddr, keyID)
-	sopsArgs = append([]string{"--hc-vault-transit", vaultTransitURI}, sopsArgs...)
 
 	slog.Info("Starting Vault-compatible API server for Sakura KMS", "key_id", keyID, "addr", ServerAddr)
 
@@ -87,9 +76,11 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	slog.Info("Server started successfully, executing SOPS", "command", "sops", "args", sopsArgs)
 
 	// 3. Set environment variables for SOPS
+	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", ServerAddr, keyID)
 	env := append(os.Environ(),
 		fmt.Sprintf("VAULT_ADDR=http://%s", ServerAddr),
 		"VAULT_TOKEN=dummy",
+		fmt.Sprintf("SOPS_VAULT_URIS=%s", vaultTransitURI),
 	)
 
 	// 4. Execute SOPS command
