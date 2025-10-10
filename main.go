@@ -17,6 +17,7 @@ const (
 	VaultPrefix    = "vault:v1:"
 	KeyIDPathParam = "key_id"
 	EnvKeyID       = "SAKURA_KMS_KEY_ID"
+	ServerAddr     = "127.0.0.1:8200"
 )
 
 func NewMux(cipher Cipher) *http.ServeMux {
@@ -45,10 +46,10 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	}
 
 	// Prepend --hc-vault-transit argument
-	vaultTransitURI := fmt.Sprintf("http://127.0.0.1:8200/v1/transit/encrypt/%s", keyID)
+	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", ServerAddr, keyID)
 	sopsArgs = append([]string{"--hc-vault-transit", vaultTransitURI}, sopsArgs...)
 
-	slog.Info("Starting Vault-compatible API server for Sakura KMS", "key_id", keyID, "addr", "127.0.0.1:8200")
+	slog.Info("Starting Vault-compatible API server for Sakura KMS", "key_id", keyID, "addr", ServerAddr)
 
 	// 1. Create and start server
 	cipher, err := NewSakuraKMS()
@@ -57,13 +58,13 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	}
 
 	mux := NewMux(cipher)
-	server := &http.Server{Addr: "127.0.0.1:8200", Handler: mux}
+	server := &http.Server{Addr: ServerAddr, Handler: mux}
 
 	go server.ListenAndServe()
 	defer server.Shutdown(context.Background())
 
 	// 2. Wait for server to become healthy
-	if err := waitForServer(ctx, "http://127.0.0.1:8200/health"); err != nil {
+	if err := waitForServer(ctx, fmt.Sprintf("http://%s/health", ServerAddr)); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
@@ -71,7 +72,7 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 
 	// 3. Set environment variables for SOPS
 	env := append(os.Environ(),
-		"VAULT_ADDR=http://127.0.0.1:8200",
+		fmt.Sprintf("VAULT_ADDR=http://%s", ServerAddr),
 		"VAULT_TOKEN=dummy",
 	)
 
@@ -109,7 +110,7 @@ func Run(ctx context.Context) error {
 	}
 	mux := NewMux(cipher)
 	sv := &http.Server{
-		Addr:    "127.0.0.1:8200",
+		Addr:    ServerAddr,
 		Handler: mux,
 	}
 	go func() {
