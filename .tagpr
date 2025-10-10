@@ -1,0 +1,5 @@
+[tagpr]
+    vPrefix = true
+    releaseBranch = main
+    release = draft
+    versionFile = version.go
