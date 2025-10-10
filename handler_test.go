@@ -221,3 +221,17 @@ func TestDecryptHandlerInvalidRequest(t *testing.T) {
 		t.Errorf("status code = %d, want %d", rec.Code, http.StatusBadRequest)
 	}
 }
+
+func TestHealthCheck(t *testing.T) {
+	cipher := &mockCipher{}
+	mux := ssk.NewMux(cipher)
+
+	req := httptest.NewRequest("GET", "/health", nil)
+	rec := httptest.NewRecorder()
+
+	mux.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("status code = %d, want %d", rec.Code, http.StatusOK)
+	}
+}

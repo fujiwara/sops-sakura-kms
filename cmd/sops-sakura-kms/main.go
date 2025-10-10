@@ -19,5 +19,5 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	return app.Run(ctx)
+	return app.RunWrapper(ctx, os.Args[1:])
 }

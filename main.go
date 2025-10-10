@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"os/exec"
 	"strings"
+	"time"
 )
 
 const (
@@ -17,9 +20,70 @@ const (
 
 func NewMux(cipher Cipher) *http.ServeMux {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health", healthCheckHandler)
 	mux.HandleFunc(makeURL("PUT /v1/transit/encrypt/{%s}"), EncryptHandlerFunc(cipher))
 	mux.HandleFunc(makeURL("PUT /v1/transit/decrypt/{%s}"), DecryptHandlerFunc(cipher))
 	return mux
+}
+
+func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+}
+
+func RunWrapper(ctx context.Context, sopsArgs []string) error {
+	keyID := os.Getenv("SAKURA_KMS_KEY_ID")
+	if keyID == "" {
+		return fmt.Errorf("SAKURA_KMS_KEY_ID environment variable is required")
+	}
+
+	// 1. Create and start server
+	cipher, err := NewSakuraKMS()
+	if err != nil {
+		return fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	mux := NewMux(cipher)
+	server := &http.Server{Addr: "127.0.0.1:8200", Handler: mux}
+
+	go server.ListenAndServe()
+	defer server.Shutdown(context.Background())
+
+	// 2. Wait for server to become healthy
+	if err := waitForServer(ctx, "http://127.0.0.1:8200/health"); err != nil {
+		return fmt.Errorf("failed to start server: %w", err)
+	}
+
+	// 3. Set environment variables for SOPS
+	env := append(os.Environ(),
+		"VAULT_ADDR=http://127.0.0.1:8200",
+		"VAULT_TOKEN=dummy",
+	)
+
+	// 4. Execute SOPS command
+	cmd := exec.CommandContext(ctx, "sops", sopsArgs...)
+	cmd.Env = env
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	return cmd.Run()
+}
+
+func waitForServer(ctx context.Context, healthURL string) error {
+	client := &http.Client{Timeout: 100 * time.Millisecond}
+	for i := 0; i < 10; i++ {
+		req, _ := http.NewRequestWithContext(ctx, "GET", healthURL, nil)
+		resp, err := client.Do(req)
+		if err == nil && resp.StatusCode == http.StatusOK {
+			resp.Body.Close()
+			return nil
+		}
+		if resp != nil {
+			resp.Body.Close()
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return fmt.Errorf("server did not become healthy")
 }
 
 func Run(ctx context.Context) error {
