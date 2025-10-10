@@ -32,7 +32,7 @@ export SAKURACLOUD_ACCESS_TOKEN="your-access-token"
 export SAKURACLOUD_ACCESS_TOKEN_SECRET="your-access-token-secret"
 
 # Sakura Cloud KMS Resource ID (12-digit number as string, e.g., 123456789012)
-export SAKURA_KMS_KEY_ID="123456789012"
+export SAKURACLOUD_KMS_KEY_ID="123456789012"
 ```
 
 ## Usage

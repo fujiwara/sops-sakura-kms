@@ -16,7 +16,7 @@ import (
 const (
 	VaultPrefix    = "vault:v1:"
 	KeyIDPathParam = "key_id"
-	EnvKeyID       = "SAKURA_KMS_KEY_ID"
+	EnvKeyID       = "SAKURACLOUD_KMS_KEY_ID"
 	ServerAddr     = "127.0.0.1:8200"
 )
 
