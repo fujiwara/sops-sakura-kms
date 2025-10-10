@@ -1,0 +1,14 @@
+foo:
+    bar: ENC[AES256_GCM,data:RxQ0,iv:oAHt3nqtthshl84cpXoaBR8pGjSt+l8QmjIf16Td2oA=,tag:cfyFJfCsBzTztgyp3gzDpA==,type:str]
+    description: ENC[AES256_GCM,data:hSolG07GR0WvBwU=,iv:zuIt2nhbvcFh7Fwtvmsnr54DgR3SIgVoadmhLD8G03o=,tag:2CRR4N4GrVCf92CFiPjUrQ==,type:str]
+sops:
+    hc_vault:
+        - vault_address: http://127.0.0.1:8200
+          engine_path: transit
+          key_name: "113702485493"
+          created_at: "2025-10-10T15:46:11Z"
+          enc: vault:v1:g6NhbGerYWVzLTI1Ni1nY22ja2V5g6JpZKwxMTM3MDI0ODU0OTOia3YAo2NpcNl3c29zOnYxOmc2UmliRzlpeENCendsRmdKckVnWkFrQXp6VXhPVnhsb2NiR1R5NGg5eTNTdFpnNHpjVE43S0pwZHNRUVE3WDFYMkRXcG1SWjE4YWdHRG5zNWFOMFlXZkVFSE5Fc2UrSmtXbWp1RDlpVjM1bmF2az2jdmFsxFB5MHaQRGHEoAofXCu/ZOnVxaaSUOmp/E2hwtOjueKAFRGxxf1n2tbHebWOi89KE5oUfByENdnGqliU1etZNS/Iv14iyjvREBzIg5sxokYXZA==
+    lastmodified: "2025-10-10T15:46:12Z"
+    mac: ENC[AES256_GCM,data:ctW2u4bY1tkGCqL3BlgrtaZKpJG45fKMmdL6MsYTAZPlpFm5GA81XGn5qbIgE40Jx1lBcjzD+69xdkyEalbANDR+mcz7qrNobhM0/SREnPf/qPidLtrghlDhZIApjHrgIL63vn49udeDTBUbxUItfYj0vam5zcI1Z2VgyeKmGM8=,iv:IFmcH5itcZ6bG/WYrgXh6oLZfM33ChKomPgRQOGCbR8=,tag:cEinvp3mn05nJMPKrkcjng==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.10.1

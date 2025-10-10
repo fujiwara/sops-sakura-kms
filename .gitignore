@@ -16,3 +16,4 @@
 
 .envrc
 /sops-sakura-kms
+test*yaml
