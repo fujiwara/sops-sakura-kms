@@ -87,8 +87,9 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 }
 
 func waitForServer(ctx context.Context, healthURL string) error {
-	client := &http.Client{Timeout: 100 * time.Millisecond}
-	for i := 0; i < 10; i++ {
+	interval := 100 * time.Millisecond
+	client := &http.Client{Timeout: interval}
+	for range 30 {
 		req, _ := http.NewRequestWithContext(ctx, "GET", healthURL, nil)
 		resp, err := client.Do(req)
 		if err == nil && resp.StatusCode == http.StatusOK {
@@ -98,7 +99,7 @@ func waitForServer(ctx context.Context, healthURL string) error {
 		if resp != nil {
 			resp.Body.Close()
 		}
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(interval)
 	}
 	return fmt.Errorf("server did not become healthy")
 }
