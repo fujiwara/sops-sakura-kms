@@ -16,6 +16,7 @@ import (
 const (
 	VaultPrefix    = "vault:v1:"
 	KeyIDPathParam = "key_id"
+	EnvKeyID       = "SAKURA_KMS_KEY_ID"
 )
 
 func NewMux(cipher Cipher) *http.ServeMux {
@@ -31,15 +32,15 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func RunWrapper(ctx context.Context, sopsArgs []string) error {
-	keyID := os.Getenv("SAKURA_KMS_KEY_ID")
+	keyID := os.Getenv(EnvKeyID)
 	if keyID == "" {
-		return fmt.Errorf("SAKURA_KMS_KEY_ID environment variable is required")
+		return fmt.Errorf("%s environment variable is required", EnvKeyID)
 	}
 
 	// Check if --hc-vault-transit is already specified
 	for _, arg := range sopsArgs {
 		if arg == "--hc-vault-transit" || strings.HasPrefix(arg, "--hc-vault-transit=") {
-			return fmt.Errorf("--hc-vault-transit should not be specified when using this wrapper; it will be set automatically from SAKURA_KMS_KEY_ID")
+			return fmt.Errorf("--hc-vault-transit should not be specified when using this wrapper; it will be set automatically from %s", EnvKeyID)
 		}
 	}
 
