@@ -13,6 +13,18 @@ This tool acts as a Vault Transit Engine compatible HTTP server, allowing SOPS t
 
 ## Installation
 
+### Homebrew
+
+```bash
+brew install fujiwara/tap/sops-sakura-kms
+```
+
+### Binary releases
+
+Download the latest binary from the [releases page](https://github.com/fujiwara/sops-sakura-kms/releases).
+
+### From source
+
 ```bash
 go install github.com/fujiwara/sops-sakura-kms/cmd/sops-sakura-kms@latest
 ```
