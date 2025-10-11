@@ -173,7 +173,7 @@ func errorResponse(w http.ResponseWriter, err error, status int) {
 // EncryptHandlerFunc returns an HTTP handler for Vault Transit Engine encrypt endpoint.
 func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		keyID := r.PathValue("key_id")
+		keyID := r.PathValue(KeyIDPathParam)
 		slog.Info("Encrypting data with Sakura KMS", "key_id", keyID)
 		req, err := readRequest[VaultEncryptRequest](r)
 		if err != nil {
@@ -201,7 +201,7 @@ func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 // DecryptHandlerFunc returns an HTTP handler for Vault Transit Engine decrypt endpoint.
 func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		keyID := r.PathValue("key_id")
+		keyID := r.PathValue(KeyIDPathParam)
 		slog.Info("Decrypting data with Sakura KMS", "key_id", keyID)
 		req, err := readRequest[VaultDecryptRequest](r)
 		if err != nil {
