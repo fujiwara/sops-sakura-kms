@@ -143,14 +143,10 @@ func errorResponse(w http.ResponseWriter, err error, status int) {
 	slog.Error("error response", "status", status, "error", err)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	if err := json.NewEncoder(w).Encode(map[string]any{
-		"errors": []map[string]any{
-			{
-				"status": status,
-				"detail": err.Error(),
-			},
-		},
-	}); err != nil {
+	res := &VaultErrorResponse{
+		Errors: []string{err.Error()},
+	}
+	if err := json.NewEncoder(w).Encode(res); err != nil {
 		slog.Error("failed to encode error response", "error", err)
 	}
 }
