@@ -139,16 +139,21 @@ func makeURL(path string) string {
 	return fmt.Sprintf(path, KeyIDPathParam)
 }
 
-func errorResponse(w http.ResponseWriter, err error, status int) {
-	slog.Error("error response", "status", status, "error", err)
+// jsonResponse writes a JSON response with the given status code and body.
+func jsonResponse(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(body); err != nil {
+		slog.Error("failed to encode json response", "error", err)
+	}
+}
+
+func errorResponse(w http.ResponseWriter, err error, status int) {
+	slog.Error("error response", "status", status, "error", err)
 	res := &VaultErrorResponse{
 		Errors: []string{err.Error()},
 	}
-	if err := json.NewEncoder(w).Encode(res); err != nil {
-		slog.Error("failed to encode error response", "error", err)
-	}
+	jsonResponse(w, status, res)
 }
 
 // EncryptHandlerFunc returns an HTTP handler for Vault Transit Engine encrypt endpoint.
@@ -176,10 +181,7 @@ func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 		res := &VaultEncryptResponse{
 			Ciphertext: VaultPrefix + ciphertext,
 		}
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(res); err != nil {
-			slog.Error("failed to encode encrypt response", "error", err)
-		}
+		jsonResponse(w, http.StatusOK, res)
 	}
 }
 
@@ -208,9 +210,6 @@ func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 		res := &VaultDecryptResponse{
 			Plaintext: base64.StdEncoding.EncodeToString(plaintext),
 		}
-		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(res); err != nil {
-			slog.Error("failed to encode decrypt response", "error", err)
-		}
+		jsonResponse(w, http.StatusOK, res)
 	}
 }
