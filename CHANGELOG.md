@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.0.3](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.2...v0.0.3) - 2025-10-11
+- Refactor: improve code quality and maintainability by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/9
+- Add --version flag support by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/11
+- setup-go v6 by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/12
+
 ## [v0.0.2](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.1...v0.0.2) - 2025-10-10
 - Update installation instructions by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/6
 - Use SOPS_VAULT_URIS environment variable instead of --hc-vault-transit flag by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/8
