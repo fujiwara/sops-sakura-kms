@@ -1,7 +1,6 @@
 package ssk_test
 
 import (
-	"context"
 	"encoding/base64"
 	"net/http/httptest"
 	"testing"
@@ -36,7 +35,7 @@ func TestVaultAPICompatibility(t *testing.T) {
 		"plaintext": base64.StdEncoding.EncodeToString(plaintext),
 	}
 
-	encryptResp, err := logical.WriteWithContext(context.Background(), encryptPath, encryptData)
+	encryptResp, err := logical.WriteWithContext(t.Context(), encryptPath, encryptData)
 	if err != nil {
 		t.Fatalf("encryption failed: %v", err)
 	}
@@ -61,7 +60,7 @@ func TestVaultAPICompatibility(t *testing.T) {
 		"ciphertext": ciphertext,
 	}
 
-	decryptResp, err := logical.WriteWithContext(context.Background(), decryptPath, decryptData)
+	decryptResp, err := logical.WriteWithContext(t.Context(), decryptPath, decryptData)
 	if err != nil {
 		t.Fatalf("decryption failed: %v", err)
 	}
@@ -112,7 +111,7 @@ func TestVaultAPICompatibilityWithBase64(t *testing.T) {
 		"plaintext": base64.StdEncoding.EncodeToString([]byte(plaintext)),
 	}
 
-	encryptResp, err := logical.WriteWithContext(context.Background(), encryptPath, encryptData)
+	encryptResp, err := logical.WriteWithContext(t.Context(), encryptPath, encryptData)
 	if err != nil {
 		t.Fatalf("encryption failed: %v", err)
 	}
@@ -132,7 +131,7 @@ func TestVaultAPICompatibilityWithBase64(t *testing.T) {
 		"ciphertext": ciphertext,
 	}
 
-	decryptResp, err := logical.WriteWithContext(context.Background(), decryptPath, decryptData)
+	decryptResp, err := logical.WriteWithContext(t.Context(), decryptPath, decryptData)
 	if err != nil {
 		t.Fatalf("decryption failed: %v", err)
 	}
@@ -182,7 +181,7 @@ func TestVaultAPIErrorHandling(t *testing.T) {
 		"ciphertext": "invalid-ciphertext-without-prefix",
 	}
 
-	_, err = logical.WriteWithContext(context.Background(), decryptPath, decryptData)
+	_, err = logical.WriteWithContext(t.Context(), decryptPath, decryptData)
 	if err == nil {
 		t.Error("expected error for invalid ciphertext, got nil")
 	}

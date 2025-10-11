@@ -23,3 +23,9 @@ type VaultDecryptRequest struct {
 type VaultDecryptResponse struct {
 	Plaintext string `json:"plaintext"`
 }
+
+// VaultErrorResponse represents the error response body for Vault API.
+// Errors is an array of error message strings.
+type VaultErrorResponse struct {
+	Errors []string `json:"errors"`
+}

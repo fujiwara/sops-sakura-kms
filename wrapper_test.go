@@ -1,8 +1,6 @@
 package ssk_test
 
 import (
-	"context"
-	"os"
 	"testing"
 
 	ssk "github.com/fujiwara/sops-sakura-kms"
@@ -10,9 +8,9 @@ import (
 
 func TestRunWrapper_WithoutKeyID(t *testing.T) {
 	// Ensure SAKURACLOUD_KMS_KEY_ID is not set
-	os.Unsetenv(ssk.EnvKeyID)
+	t.Setenv(ssk.EnvKeyID, "")
 
-	err := ssk.RunWrapper(context.Background(), []string{"--version"})
+	err := ssk.RunWrapper(t.Context(), []string{"--version"})
 	if err == nil {
 		t.Error("expected error when SAKURACLOUD_KMS_KEY_ID is not set, got nil")
 	}
