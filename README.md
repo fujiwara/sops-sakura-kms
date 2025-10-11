@@ -2,7 +2,7 @@
 
 A SOPS wrapper that enables [SOPS (Secrets OPerationS)](https://github.com/getsops/sops) to use [Sakura Cloud KMS](https://cloud.sakura.ad.jp/products/kms/) for data key encryption.
 
-This tool acts as a Vault Transit Engine compatible HTTP server, allowing SOPS to encrypt and decrypt data keys using Sakura Cloud KMS through the `--hc-vault-transit` option.
+This tool acts as a Vault Transit Engine compatible HTTP server, allowing SOPS to encrypt and decrypt data keys using Sakura Cloud KMS through the `SOPS_VAULT_URIS` environment variable.
 
 ## Features
 
@@ -65,9 +65,9 @@ sops-sakura-kms secrets.enc.yaml
 ### How it works
 
 1. `sops-sakura-kms` starts a local Vault Transit Engine compatible HTTP server on `127.0.0.1:8200`
-2. Automatically adds `--hc-vault-transit http://127.0.0.1:8200/v1/transit/encrypt/{key_id}` to SOPS arguments
+2. Automatically sets the `SOPS_VAULT_URIS` environment variable to `http://127.0.0.1:8200/v1/transit/encrypt/{key_id}`
 3. Sets required environment variables (`VAULT_ADDR`, `VAULT_TOKEN`)
-4. Executes SOPS with the configured parameters
+4. Executes SOPS with the configured environment
 5. The server handles encryption/decryption requests from SOPS using Sakura Cloud KMS
 
 ### SOPS Configuration
@@ -77,10 +77,10 @@ You can use the standard SOPS configuration file (`.sops.yaml`) without specifyi
 ```yaml
 creation_rules:
   - path_regex: \.yaml$
-    # No need to specify hc_vault_transit_uri - it's automatically configured
+    # No need to specify hc_vault_transit_uri - it's automatically configured via SOPS_VAULT_URIS
 ```
 
-**Note**: Do not manually specify `--hc-vault-transit` when using `sops-sakura-kms`. The wrapper will return an error if you do, as it automatically manages this configuration.
+**Note**: The wrapper automatically sets the `SOPS_VAULT_URIS` environment variable, so you don't need to configure it manually in `.sops.yaml` or pass it as a command-line argument.
 
 ## API Endpoints
 
