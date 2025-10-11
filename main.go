@@ -34,6 +34,16 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// newServer creates a new HTTP server with Vault Transit Engine compatible API.
+func newServer() (*http.Server, error) {
+	cipher, err := NewSakuraKMS()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create cipher: %w", err)
+	}
+	mux := NewMux(cipher)
+	return &http.Server{Addr: ServerAddr, Handler: mux}, nil
+}
+
 // RunWrapper starts a Vault Transit Engine compatible API server and executes SOPS command.
 // It automatically configures SOPS to use Sakura Cloud KMS via SOPS_VAULT_URIS environment variable.
 // Requires SAKURA_KMS_KEY_ID environment variable to be set.
@@ -46,13 +56,10 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	slog.Info("Starting Vault-compatible API server for Sakura KMS", "key_id", keyID, "addr", ServerAddr)
 
 	// 1. Create and start server
-	cipher, err := NewSakuraKMS()
+	server, err := newServer()
 	if err != nil {
-		return fmt.Errorf("failed to create cipher: %w", err)
+		return err
 	}
-
-	mux := NewMux(cipher)
-	server := &http.Server{Addr: ServerAddr, Handler: mux}
 
 	errCh := make(chan error, 1)
 	go func() {
@@ -115,14 +122,9 @@ func waitForServer(ctx context.Context, healthURL string) error {
 // Run starts a Vault Transit Engine compatible API server for Sakura Cloud KMS.
 // The server listens on 127.0.0.1:8200 and provides encrypt/decrypt endpoints.
 func Run(ctx context.Context) error {
-	cipher, err := NewSakuraKMS()
+	sv, err := newServer()
 	if err != nil {
-		return fmt.Errorf("failed to create cipher: %w", err)
-	}
-	mux := NewMux(cipher)
-	sv := &http.Server{
-		Addr:    ServerAddr,
-		Handler: mux,
+		return err
 	}
 	go func() {
 		<-ctx.Done()
