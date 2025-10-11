@@ -139,6 +139,20 @@ func makeURL(path string) string {
 	return fmt.Sprintf(path, KeyIDPathParam)
 }
 
+// readRequest decodes JSON request body into the specified type.
+// Validates Content-Type header and decodes the request body.
+func readRequest[T any](r *http.Request) (*T, error) {
+	contentType := r.Header.Get("Content-Type")
+	if contentType != "" && !strings.HasPrefix(contentType, "application/json") {
+		return nil, fmt.Errorf("invalid content-type: %s", contentType)
+	}
+	var req T
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return nil, err
+	}
+	return &req, nil
+}
+
 // jsonResponse writes a JSON response with the given status code and body.
 func jsonResponse(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
@@ -161,8 +175,7 @@ func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue("key_id")
 		slog.Info("Encrypting data with Sakura KMS", "key_id", keyID)
-		req := &VaultEncryptRequest{}
-		err := json.NewDecoder(r.Body).Decode(req)
+		req, err := readRequest[VaultEncryptRequest](r)
 		if err != nil {
 			errorResponse(w, err, http.StatusBadRequest)
 			return
@@ -190,8 +203,7 @@ func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue("key_id")
 		slog.Info("Decrypting data with Sakura KMS", "key_id", keyID)
-		req := &VaultDecryptRequest{}
-		err := json.NewDecoder(r.Body).Decode(req)
+		req, err := readRequest[VaultDecryptRequest](r)
 		if err != nil {
 			errorResponse(w, err, http.StatusBadRequest)
 			return
