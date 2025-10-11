@@ -60,10 +60,9 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	// 2. Create and start server
 	server := newServer(cipher)
 
-	errCh := make(chan error, 1)
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			errCh <- err
+			slog.Error("server error", "error", err)
 		}
 	}()
 	defer server.Shutdown(context.Background())
@@ -71,13 +70,6 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	// 3. Wait for server to become healthy
 	if err := waitForServer(ctx, fmt.Sprintf("http://%s/health", ServerAddr)); err != nil {
 		return fmt.Errorf("failed to start server: %w", err)
-	}
-
-	// Check if server failed to start
-	select {
-	case err := <-errCh:
-		return fmt.Errorf("server failed to start: %w", err)
-	default:
 	}
 
 	slog.Info("Server started successfully, executing SOPS", "command", SOPSbin, "args", sopsArgs)
