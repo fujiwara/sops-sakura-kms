@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -19,5 +20,15 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	return app.RunWrapper(ctx, os.Args[1:])
+	args := os.Args[1:]
+
+	// Handle --version flag
+	for _, arg := range args {
+		if arg == "--version" || arg == "-version" {
+			fmt.Printf("sops-sakura-kms version %s\n", app.Version)
+			return nil
+		}
+	}
+
+	return app.RunWrapper(ctx, args)
 }
