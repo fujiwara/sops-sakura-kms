@@ -18,6 +18,7 @@ const (
 	KeyIDPathParam = "key_id"
 	EnvKeyID       = "SAKURACLOUD_KMS_KEY_ID"
 	ServerAddr     = "127.0.0.1:8200"
+	SOPSbin        = "sops"
 )
 
 // NewMux creates a new HTTP ServeMux with Vault Transit Engine compatible API endpoints.
@@ -73,18 +74,18 @@ func RunWrapper(ctx context.Context, sopsArgs []string) error {
 	default:
 	}
 
-	slog.Info("Server started successfully, executing SOPS", "command", "sops", "args", sopsArgs)
+	slog.Info("Server started successfully, executing SOPS", "command", SOPSbin, "args", sopsArgs)
 
 	// 3. Set environment variables for SOPS
 	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", ServerAddr, keyID)
 	env := append(os.Environ(),
-		fmt.Sprintf("VAULT_ADDR=http://%s", ServerAddr),
+		"VAULT_ADDR=http://"+ServerAddr,
 		"VAULT_TOKEN=dummy",
-		fmt.Sprintf("SOPS_VAULT_URIS=%s", vaultTransitURI),
+		"SOPS_VAULT_URIS="+vaultTransitURI,
 	)
 
 	// 4. Execute SOPS command
-	cmd := exec.CommandContext(ctx, "sops", sopsArgs...)
+	cmd := exec.CommandContext(ctx, SOPSbin, sopsArgs...)
 	cmd.Env = env
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
