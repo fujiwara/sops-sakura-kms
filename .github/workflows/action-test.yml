@@ -19,11 +19,13 @@ jobs:
     name: test action
     runs-on: ${{ matrix.env.runner }}
     steps:
-      - uses: fujiwara/sops-sakura-kms@main
+      - name: install specified version
+        uses: fujiwara/sops-sakura-kms@main
         with:
           version: v0.0.4
           args: "--version"
-      - uses: fujiwara/sops-sakura-kms@main
+      - name: install latest version
+        uses: fujiwara/sops-sakura-kms@main
         with:
           version: latest
           args: "--version"

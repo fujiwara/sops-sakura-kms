@@ -17,7 +17,7 @@ runs:
       id: set-version
       run: |
         if [[ ${{ inputs.version }} == "latest" ]]; then
-          VERSION=$(curl -siI https://github.com/fujiwara/sops-sakura-kms/releases/latest | awk -F/ '/[lL]ocation:/{print $NF}')
+          VERSION=$(curl -siI https://github.com/fujiwara/sops-sakura-kms/releases/latest | awk -F/ '/[lL]ocation:/{print $NF}' | tr -d '\r\n')
         else
           VERSION=${{ inputs.version }}
         fi
