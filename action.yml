@@ -1,0 +1,60 @@
+inputs:
+  version:
+    description: "A version to install"
+    default: latest
+    required: false
+  version-file:
+    description: "File name that contains the version."
+    required: false
+  args:
+    description: "Arguments to pass to command"
+    required: false
+    default: ""
+runs:
+  using: "composite"
+  steps:
+    - name: Set version
+      id: set-version
+      run: |
+        if [[ ${{ inputs.version }} == "latest" ]]; then
+          VERSION=$(curl -siI https://github.com/fujiwara/sops-sakura-kms/releases/latest | awk -F/ '/[lL]ocation:/{print $NF}')
+        else
+          VERSION=${{ inputs.version }}
+        fi
+        if [ -n "${{ inputs.version-file }}" ]; then
+          VERSION=v$(cat ${{ inputs.version-file }})
+        fi
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+      shell: bash
+    - name: Set file name
+      id: set-filename
+      run: |
+        case "${{ runner.os }}" in
+          Linux) BIN_OS="linux" ;;
+          macOS) BIN_OS="darwin" ;;
+          *) BIN_OS="linux" ;;
+        esac
+
+        case "${{ runner.arch }}" in
+          X64) BIN_ARCH="amd64" ;;
+          ARM64) BIN_ARCH="arm64" ;;
+          *) BIN_ARCH="amd64" ;;
+        esac
+
+        FILENAME=sops-sakura-kms_${{ steps.set-version.outputs.VERSION }}_${BIN_OS}_${BIN_ARCH}.tar.gz
+        echo "FILENAME=$FILENAME" >> $GITHUB_OUTPUT
+      shell: bash
+    - run: |
+        mkdir -p /tmp/sops-sakura-kms-${{ steps.set-version.outputs.VERSION }}
+        cd /tmp/sops-sakura-kms-${{ steps.set-version.outputs.VERSION }}
+        curl -sL --retry=3 https://github.com/fujiwara/sops-sakura-kms/releases/download/${{ steps.set-version.outputs.VERSION }}/${{ steps.set-filename.outputs.FILENAME }} | tar zxvf - sops-sakura-kms
+        mkdir -p $RUNNER_TOOL_CACHE/sops-sakura-kms
+        sudo install sops-sakura-kms $RUNNER_TOOL_CACHE/sops-sakura-kms/sops-sakura-kms
+        echo "$RUNNER_TOOL_CACHE/sops-sakura-kms" >> $GITHUB_PATH
+        sops-sakura-kms --version
+      shell: bash
+    - name: Run command
+      run: |
+        sops-sakura-kms ${{ inputs.args }}
+      shell: bash
+      if: ${{ inputs.args != '' }}
