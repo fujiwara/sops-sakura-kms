@@ -47,7 +47,7 @@ runs:
     - run: |
         mkdir -p /tmp/sops-sakura-kms-${{ steps.set-version.outputs.VERSION }}
         cd /tmp/sops-sakura-kms-${{ steps.set-version.outputs.VERSION }}
-        curl -sL --retry=3 https://github.com/fujiwara/sops-sakura-kms/releases/download/${{ steps.set-version.outputs.VERSION }}/${{ steps.set-filename.outputs.FILENAME }} | tar zxvf - sops-sakura-kms
+        curl -sL --retry 3 https://github.com/fujiwara/sops-sakura-kms/releases/download/${{ steps.set-version.outputs.VERSION }}/${{ steps.set-filename.outputs.FILENAME }} | tar zxvf - sops-sakura-kms
         mkdir -p $RUNNER_TOOL_CACHE/sops-sakura-kms
         sudo install sops-sakura-kms $RUNNER_TOOL_CACHE/sops-sakura-kms/sops-sakura-kms
         echo "$RUNNER_TOOL_CACHE/sops-sakura-kms" >> $GITHUB_PATH
