@@ -1,0 +1,24 @@
+name: test action
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/action-test.yml"
+      - "action.yml"
+  workflow_dispatch:
+
+jobs:
+  install:
+    strategy:
+      matrix:
+        env:
+          - runner: ubuntu-24.04
+          - runner: ubuntu-24.04-arm
+          - runner: macos-latest
+    name: test action
+    runs-on: ${{ matrix.env.runner }}
+    steps:
+      - uses: fujiwara/sops-sakura-kms@main
+        with:
+          version: v0.0.4
