@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.0.4](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.3...v0.0.4) - 2025-10-15
+- Add action.yml to install on GitHub Actions. by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/13
+
 ## [v0.0.3](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.2...v0.0.3) - 2025-10-11
 - Refactor: improve code quality and maintainability by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/9
 - Add --version flag support by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/11
