@@ -29,6 +29,23 @@ Download the latest binary from the [releases page](https://github.com/fujiwara/
 go install github.com/fujiwara/sops-sakura-kms/cmd/sops-sakura-kms@latest
 ```
 
+### GitHub Action
+
+You can install `sops-sakura-kms` in your GitHub Actions workflows.
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: fujiwara/sops-sakura-kms@main
+        with:
+          version: 'v0.0.4' # or 'latest'
+          # version-file: './.version'
+```
+
+This action sets up `sops-sakura-kms` and makes it available in the PATH. The `sops` command needs to be installed separately.
+
 ## Prerequisites
 
 - [SOPS](https://github.com/getsops/sops) must be installed and available in your PATH
