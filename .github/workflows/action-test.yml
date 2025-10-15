@@ -22,3 +22,4 @@ jobs:
       - uses: fujiwara/sops-sakura-kms@main
         with:
           version: v0.0.4
+          args: "--version"

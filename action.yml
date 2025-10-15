@@ -51,7 +51,6 @@ runs:
         mkdir -p $RUNNER_TOOL_CACHE/sops-sakura-kms
         sudo install sops-sakura-kms $RUNNER_TOOL_CACHE/sops-sakura-kms/sops-sakura-kms
         echo "$RUNNER_TOOL_CACHE/sops-sakura-kms" >> $GITHUB_PATH
-        sops-sakura-kms --version
       shell: bash
     - name: Run command
       run: |
