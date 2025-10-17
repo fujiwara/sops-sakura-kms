@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.0.5](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.4...v0.0.5) - 2025-10-17
+- add action-test.yml by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/15
+
 ## [v0.0.4](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.3...v0.0.4) - 2025-10-15
 - Add action.yml to install on GitHub Actions. by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/13
 
