@@ -76,6 +76,12 @@ func RunWrapper(ctx context.Context, args []string) error {
 		return fmt.Errorf("failed to start server: %w", err)
 	}
 
+	if e.ServerOnly {
+		slog.Info("Server is running in server-only mode")
+		<-ctx.Done()
+		return nil
+	}
+
 	slog.Info("Server started successfully, executing SOPS", "command", e.SOPSPath, "args", args)
 
 	// 4. Set environment variables for SOPS
