@@ -10,6 +10,7 @@ This tool acts as a Vault Transit Engine compatible HTTP server, allowing SOPS t
 - **Vault Compatibility**: Implements Vault Transit Engine compatible API
 - **Automatic Configuration**: Automatically configures SOPS with the correct Vault Transit URI
 - **Transparent Operation**: Works as a wrapper around SOPS, passing through all SOPS commands
+- **Server-Only Mode**: Can run as a standalone Vault Transit Engine compatible server without SOPS
 
 ## Installation
 
@@ -64,6 +65,21 @@ export SAKURACLOUD_ACCESS_TOKEN_SECRET="your-access-token-secret"
 export SAKURACLOUD_KMS_KEY_ID="123456789012"
 ```
 
+### Optional Environment Variables
+
+You can customize the behavior with these optional environment variables:
+
+```bash
+# Run server-only mode without executing SOPS (default: false)
+export SSK_SERVER_ONLY=true
+
+# Server listen address (default: 127.0.0.1:8200)
+export SSK_SERVER_ADDR="127.0.0.1:8200"
+
+# SOPS command path (default: sops)
+export SSK_SOPS_PATH="/path/to/sops"
+```
+
 ## Usage
 
 Use `sops-sakura-kms` as a drop-in replacement for the `sops` command:
@@ -98,6 +114,37 @@ creation_rules:
 ```
 
 **Note**: The wrapper automatically sets the `SOPS_VAULT_URIS` environment variable, so you don't need to configure it manually in `.sops.yaml` or pass it as a command-line argument.
+
+### Server-Only Mode
+
+You can run `sops-sakura-kms` as a standalone Vault Transit Engine compatible server without executing SOPS:
+
+```bash
+# Start server-only mode
+export SSK_SERVER_ONLY=true
+sops-sakura-kms
+
+# The server will run until interrupted (Ctrl+C)
+```
+
+This mode is useful when:
+- You want to use the Vault Transit Engine API directly from your applications
+- You need to run the server as a separate service
+- You're testing or debugging the encryption/decryption API endpoints
+
+In server-only mode, you can use the Vault API endpoints directly:
+
+```bash
+# Encrypt data
+curl -X PUT http://127.0.0.1:8200/v1/transit/encrypt/123456789012 \
+  -H "Content-Type: application/json" \
+  -d '{"plaintext":"aGVsbG8gd29ybGQ="}'
+
+# Decrypt data
+curl -X PUT http://127.0.0.1:8200/v1/transit/decrypt/123456789012 \
+  -H "Content-Type: application/json" \
+  -d '{"ciphertext":"vault:v1:..."}'
+```
 
 ## API Endpoints
 
