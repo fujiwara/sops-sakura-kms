@@ -23,12 +23,14 @@ func run(ctx context.Context) error {
 	args := os.Args[1:]
 
 	// Handle --version flag
+	newArgs := make([]string, 0, len(args))
 	for _, arg := range args {
 		if arg == "--version" || arg == "-version" {
 			fmt.Printf("sops-sakura-kms version %s\n", app.Version)
 			return nil
 		}
+		newArgs = append(newArgs, arg)
 	}
 
-	return app.RunWrapper(ctx, args)
+	return app.RunWrapper(ctx, newArgs)
 }
