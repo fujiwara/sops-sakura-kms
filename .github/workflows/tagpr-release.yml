@@ -56,9 +56,12 @@ jobs:
         with:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ghcr.io
         if: ${{ steps.tagpr.outputs.tag != '' || github.event_name == 'workflow_dispatch' }}
 
       - name: Build and Push Docker Image
         run: |
-          make image-push IMAGE_VERSION=${{ steps.tagpr.outputs.tag || github.event.inputs.tag || 'latest' }}
+          make image-push
+        env:
+          IMAGE_VERSION: ${{ steps.tagpr.outputs.tag || github.event.inputs.tag || 'latest' }}
         if: ${{ steps.tagpr.outputs.tag != '' || github.event_name == 'workflow_dispatch' }}

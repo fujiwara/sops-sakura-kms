@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: fujiwara/sops-sakura-kms@main
         with:
-          version: 'v0.0.4' # or 'latest'
+          version: 'v0.0.7' # or 'latest'
           # version-file: './.version'
 ```
 
@@ -57,7 +57,7 @@ $ docker run --rm \
     -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
     -e SAKURACLOUD_KMS_KEY_ID \
     -v $(pwd):/work -w /work \
-    ghcr.io/fujiwara/sops-sakura-kms:v0.0.6 \
+    ghcr.io/fujiwara/sops-sakura-kms:v0.0.7 \
     -d secrets.enc.yaml
 ```
 
