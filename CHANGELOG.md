@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.0.6](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.5...v0.0.6) - 2025-11-26
+- build container images by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/20
+
 ## [v0.0.5](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.4...v0.0.5) - 2025-11-18
 - add action-test.yml by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/15
 - Add server-only mode and environment variable configuration by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/18
