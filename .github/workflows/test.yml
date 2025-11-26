@@ -27,4 +27,4 @@ jobs:
         run: |
           make image-load
         env:
-          IMAGE_VERSION: test-$(date +%s)-${{ matrix.go }}
+          IMAGE_VERSION: test-${{ github.sha }}-${{ matrix.go }}
