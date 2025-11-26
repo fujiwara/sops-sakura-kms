@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.1.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.7...v0.1.0) - 2025-11-26
+- Rename SSK_SOPS_PATH to SSK_COMMAND by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/23
+
 ## [v0.0.7](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.6...v0.0.7) - 2025-11-26
 
 ## [v0.0.6](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.5...v0.0.6) - 2025-11-26
