@@ -39,7 +39,7 @@ func newServer(cipher Cipher, addr string) *http.Server {
 	return &http.Server{Addr: addr, Handler: mux}
 }
 
-// RunWrapper starts a Vault Transit Engine compatible API server and executes SOPS command.
+// RunWrapper starts a Vault Transit Engine compatible API server and executes a command.
 // It automatically configures SOPS to use Sakura Cloud KMS via SOPS_VAULT_URIS environment variable.
 // Requires SAKURA_KMS_KEY_ID environment variable to be set.
 func RunWrapper(ctx context.Context, args []string) error {
@@ -82,7 +82,7 @@ func RunWrapper(ctx context.Context, args []string) error {
 		return nil
 	}
 
-	slog.Info("Server started successfully, executing SOPS", "command", e.SOPSPath, "args", args)
+	slog.Info("Server started successfully, executing", "command", e.Command, "args", args)
 
 	// 4. Set environment variables for SOPS
 	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", e.ServerAddr, e.KMSKeyID)
@@ -92,8 +92,8 @@ func RunWrapper(ctx context.Context, args []string) error {
 		"SOPS_VAULT_URIS="+vaultTransitURI,
 	)
 
-	// 5. Execute SOPS command
-	cmd := exec.CommandContext(ctx, e.SOPSPath, args...)
+	// 5. Execute command
+	cmd := exec.CommandContext(ctx, e.Command, args...)
 	cmd.Env = env
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
