@@ -1,5 +1,7 @@
 # Changelog
 
+## [v0.0.7](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.6...v0.0.7) - 2025-11-26
+
 ## [v0.0.6](https://github.com/fujiwara/sops-sakura-kms/compare/v0.0.5...v0.0.6) - 2025-11-26
 - build container images by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/20
 
