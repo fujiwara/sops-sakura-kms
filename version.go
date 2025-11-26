@@ -1,3 +1,3 @@
 package ssk
 
-var Version = "v0.0.6"
+var Version = "v0.0.7"
