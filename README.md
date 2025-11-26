@@ -57,7 +57,7 @@ $ docker run --rm \
     -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
     -e SAKURACLOUD_KMS_KEY_ID \
     -v $(pwd):/work -w /work \
-    ghcr.io/fujiwara/sops-sakura-kms:v0.0.5 \
+    ghcr.io/fujiwara/sops-sakura-kms:v0.0.6 \
     -d secrets.enc.yaml
 ```
 
