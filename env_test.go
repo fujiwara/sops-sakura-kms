@@ -13,7 +13,7 @@ import (
 var envSet = map[string]string{
 	"SAKURACLOUD_KMS_KEY_ID": "example-key-id-2",
 	"SSK_SERVER_ADDR":        "192.168.0.1:8200",
-	"SSK_SOPS_PATH":          "/usr/local/bin/sops",
+	"SSK_COMMAND":            "/usr/local/bin/sops",
 	"SSK_SERVER_ONLY":        "true",
 }
 
@@ -30,7 +30,7 @@ func TestParseEnv(t *testing.T) {
 	serverOnly, _ := strconv.ParseBool(os.Getenv("SSK_SERVER_ONLY")) // default is false
 	if diff := cmp.Diff(ssk.Env{
 		ServerAddr: os.Getenv("SSK_SERVER_ADDR"),
-		SOPSPath:   os.Getenv("SSK_SOPS_PATH"),
+		Command:    os.Getenv("SSK_COMMAND"),
 		KMSKeyID:   os.Getenv("SAKURACLOUD_KMS_KEY_ID"),
 		ServerOnly: serverOnly,
 	}, e); diff != "" {
@@ -47,7 +47,7 @@ func TestParseEnvDefault(t *testing.T) {
 	k.Parse([]string{})
 	if diff := cmp.Diff(ssk.Env{
 		ServerAddr: "127.0.0.1:8200",
-		SOPSPath:   "sops",
+		Command:    "sops",
 		KMSKeyID:   os.Getenv("SAKURACLOUD_KMS_KEY_ID"),
 		ServerOnly: false,
 	}, e); diff != "" {
