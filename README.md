@@ -92,8 +92,8 @@ export SSK_SERVER_ONLY=true
 # Server listen address (default: 127.0.0.1:8200)
 export SSK_SERVER_ADDR="127.0.0.1:8200"
 
-# SOPS command path (default: sops)
-export SSK_SOPS_PATH="/path/to/sops"
+# Command to execute (default: sops)
+export SSK_COMMAND="/path/to/sops"
 ```
 
 ## Usage
@@ -161,6 +161,50 @@ curl -X PUT http://127.0.0.1:8200/v1/transit/decrypt/123456789012 \
   -H "Content-Type: application/json" \
   -d '{"ciphertext":"vault:v1:..."}'
 ```
+
+### Using with Terraform
+
+You can use `sops-sakura-kms` to decrypt secrets in Terraform using the [sops_file](https://registry.terraform.io/providers/carlpett/sops/latest/docs/data-sources/file) data source.
+
+First, create an encrypted file with SOPS:
+
+```bash
+sops-sakura-kms -e secrets.yaml > secrets.enc.yaml
+```
+
+Then, use the encrypted file in Terraform:
+
+```hcl
+# main.tf
+terraform {
+  required_providers {
+    sops = {
+      source  = "carlpett/sops"
+      version = "~> 1.0"
+    }
+  }
+}
+
+data "sops_file" "secrets" {
+  source_file = "secrets.enc.yaml"
+}
+
+output "secret_value" {
+  value     = data.sops_file.secrets.data["password"]
+  sensitive = true
+}
+```
+
+Run Terraform with `sops-sakura-kms`:
+
+```bash
+# Set SSK_COMMAND to run terraform instead of sops
+export SSK_COMMAND=terraform
+sops-sakura-kms plan
+sops-sakura-kms apply
+```
+
+The wrapper automatically starts the Vault Transit Engine compatible server, sets the required environment variables (`VAULT_ADDR`, `VAULT_TOKEN`, `SOPS_VAULT_URIS`), and executes Terraform. The sops provider will use the local server to decrypt secrets.
 
 ## API Endpoints
 
