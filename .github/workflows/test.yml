@@ -22,5 +22,9 @@ jobs:
       - name: Build & Test
         run: |
           go test -race ./...
+
+      - name: Build image
+        run: |
+          make image-load
         env:
-          GO111MODULE: on
+          IMAGE_VERSION: test-$(date +%s)-${{ matrix.go }}
