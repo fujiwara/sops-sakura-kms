@@ -47,6 +47,22 @@ jobs:
 
 This action sets up `sops-sakura-kms` and makes it available in the PATH. The `sops` command needs to be installed separately.
 
+### Container Image
+
+You can use the provided container image: [`ghcr.io/fujiwara/sops-sakura-kms`](https://github.com/fujiwara/sops-sakura-kms/pkgs/container/sops-sakura-kms).
+
+```console
+$ docker run --rm \
+    -e SAKURACLOUD_ACCESS_TOKEN \
+    -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
+    -e SAKURACLOUD_KMS_KEY_ID \
+    -v $(pwd):/work -w /work \
+    ghcr.io/fujiwara/sops-sakura-kms:v0.0.5 \
+    -d secrets.enc.yaml
+```
+
+This image includes both `sops-sakura-kms` and `sops` commands.
+
 ## Prerequisites
 
 - [SOPS](https://github.com/getsops/sops) must be installed and available in your PATH
