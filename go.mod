@@ -4,9 +4,10 @@ go 1.24.0
 
 require (
 	github.com/alecthomas/kong v1.13.0
+	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/vault/api v1.22.0
 	github.com/sacloud/kms-api-go v0.3.0
-	golang.org/x/sys v0.37.0
+	golang.org/x/sys v0.38.0
 )
 
 require (
@@ -19,7 +20,6 @@ require (
 	github.com/go-faster/jx v1.1.0 // indirect
 	github.com/go-faster/yaml v0.4.6 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.1 // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
