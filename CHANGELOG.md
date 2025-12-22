@@ -2,9 +2,9 @@
 
 ## [v0.2.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.1.0...v0.2.0) - 2025-12-22
 - Replace kong with custom LoadEnv function by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/29
+- Preserve exit code from wrapped command by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/31
 - Bump actions/setup-go from 6.0.0 to 6.1.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/27
 - Bump actions/checkout from 5.0.0 to 6.0.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/26
-- Preserve exit code from wrapped command by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/31
 - Bump golang.org/x/sys from 0.37.0 to 0.38.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/25
 - Bump Songmu/tagpr from 1.8.4 to 1.9.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/17
 
