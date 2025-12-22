@@ -119,6 +119,13 @@ sops-sakura-kms secrets.enc.yaml
 4. Executes SOPS with the configured environment
 5. The server handles encryption/decryption requests from SOPS using Sakura Cloud KMS
 
+### Exit Code
+
+`sops-sakura-kms` preserves the exit code from the wrapped command (SOPS or custom command specified by `SSK_COMMAND`).
+
+- If the wrapped command exits with code N, `sops-sakura-kms` also exits with code N
+- If an error occurs before executing the wrapped command (e.g., missing environment variables, server startup failure), `sops-sakura-kms` exits with code 1
+
 ### SOPS Configuration
 
 You can use the standard SOPS configuration file (`.sops.yaml`) without specifying the `hc_vault_transit_uri`:

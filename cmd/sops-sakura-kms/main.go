@@ -13,13 +13,14 @@ import (
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), signals()...)
 	defer stop()
-	if err := run(ctx); err != nil {
+	exitCode, err := run(ctx)
+	if err != nil {
 		slog.Error(err.Error())
-		os.Exit(1)
 	}
+	os.Exit(exitCode)
 }
 
-func run(ctx context.Context) error {
+func run(ctx context.Context) (int, error) {
 	args := os.Args[1:]
 
 	// Handle --version flag
@@ -27,7 +28,7 @@ func run(ctx context.Context) error {
 	for _, arg := range args {
 		if arg == "--version" || arg == "-version" {
 			fmt.Printf("sops-sakura-kms version %s\n", app.Version)
-			return nil
+			return 0, nil
 		}
 		newArgs = append(newArgs, arg)
 	}
