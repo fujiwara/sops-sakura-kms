@@ -3,7 +3,6 @@ module github.com/fujiwara/sops-sakura-kms
 go 1.24.0
 
 require (
-	github.com/alecthomas/kong v1.13.0
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/vault/api v1.22.0
 	github.com/sacloud/kms-api-go v0.3.0
