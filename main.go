@@ -11,8 +11,6 @@ import (
 	"os/exec"
 	"strings"
 	"time"
-
-	"github.com/alecthomas/kong"
 )
 
 const (
@@ -43,13 +41,9 @@ func newServer(cipher Cipher, addr string) *http.Server {
 // It automatically configures SOPS to use Sakura Cloud KMS via SOPS_VAULT_URIS environment variable.
 // Requires SAKURA_KMS_KEY_ID environment variable to be set.
 func RunWrapper(ctx context.Context, args []string) error {
-	e := &Env{}
-	k, err := kong.New(e)
+	e, err := LoadEnv()
 	if err != nil {
-		return fmt.Errorf("failed to create parser: %w", err)
-	}
-	if _, err := k.Parse([]string{}); err != nil { // parse from environment only(not from args)
-		return fmt.Errorf("failed to parse command-line arguments: %w", err)
+		return fmt.Errorf("failed to load environment variables: %w", err)
 	}
 	slog.Debug("Parsed command-line arguments", "env", e)
 
