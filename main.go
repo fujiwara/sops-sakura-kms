@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -16,6 +17,9 @@ import (
 const (
 	VaultPrefix    = "vault:v1:"
 	KeyIDPathParam = "key_id"
+
+	// ExitCodeError is the exit code returned when an error occurs in the application.
+	ExitCodeError = 1
 )
 
 // NewMux creates a new HTTP ServeMux with Vault Transit Engine compatible API endpoints.
@@ -40,10 +44,11 @@ func newServer(cipher Cipher, addr string) *http.Server {
 // RunWrapper starts a Vault Transit Engine compatible API server and executes a command.
 // It automatically configures SOPS to use Sakura Cloud KMS via SOPS_VAULT_URIS environment variable.
 // Requires SAKURA_KMS_KEY_ID environment variable to be set.
-func RunWrapper(ctx context.Context, args []string) error {
+// Returns the exit code of the executed command and any error that occurred.
+func RunWrapper(ctx context.Context, args []string) (int, error) {
 	e, err := LoadEnv()
 	if err != nil {
-		return fmt.Errorf("failed to load environment variables: %w", err)
+		return ExitCodeError, fmt.Errorf("failed to load environment variables: %w", err)
 	}
 	slog.Debug("Parsed command-line arguments", "env", e)
 
@@ -52,7 +57,7 @@ func RunWrapper(ctx context.Context, args []string) error {
 	// 1. Create cipher
 	cipher, err := NewSakuraKMS()
 	if err != nil {
-		return fmt.Errorf("failed to create cipher: %w", err)
+		return ExitCodeError, fmt.Errorf("failed to create cipher: %w", err)
 	}
 
 	// 2. Create and start server
@@ -67,13 +72,13 @@ func RunWrapper(ctx context.Context, args []string) error {
 
 	// 3. Wait for server to become healthy
 	if err := waitForServer(ctx, fmt.Sprintf("http://%s/health", e.ServerAddr)); err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
+		return ExitCodeError, fmt.Errorf("failed to start server: %w", err)
 	}
 
 	if e.ServerOnly {
 		slog.Info("Server is running in server-only mode")
 		<-ctx.Done()
-		return nil
+		return 0, nil
 	}
 
 	slog.Info("Server started successfully, executing", "command", e.Command, "args", args)
@@ -93,7 +98,14 @@ func RunWrapper(ctx context.Context, args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return exitErr.ExitCode(), nil
+		}
+		return ExitCodeError, err
+	}
+	return 0, nil
 }
 
 func waitForServer(ctx context.Context, healthURL string) error {
