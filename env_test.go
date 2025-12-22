@@ -36,6 +36,7 @@ func TestParseEnv(t *testing.T) {
 }
 
 func TestParseEnvDefault(t *testing.T) {
+	t.Setenv("SAKURACLOUD_KMS_KEY_ID", "default-key-id")
 	e, err := ssk.LoadEnv()
 	if err != nil {
 		t.Fatalf("failed to load environment variables: %v", err)
@@ -47,6 +48,14 @@ func TestParseEnvDefault(t *testing.T) {
 		ServerOnly: false,
 	}, e); diff != "" {
 		t.Errorf("parsed env mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestParseEnvRequired(t *testing.T) {
+	t.Setenv("SAKURACLOUD_KMS_KEY_ID", "")
+	_, err := ssk.LoadEnv()
+	if err == nil {
+		t.Fatal("expected error for missing required field, got nil")
 	}
 }
 
