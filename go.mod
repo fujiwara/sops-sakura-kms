@@ -1,11 +1,11 @@
 module github.com/fujiwara/sops-sakura-kms
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/vault/api v1.22.0
-	github.com/sacloud/kms-api-go v0.3.0
+	github.com/sacloud/kms-api-go v0.3.1
 	golang.org/x/sys v0.39.0
 )
 
@@ -35,9 +35,9 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/ogen-go/ogen v1.15.1 // indirect
 	github.com/ryanuber/go-glob v1.0.0 // indirect
-	github.com/sacloud/api-client-go v0.3.3 // indirect
+	github.com/sacloud/api-client-go v0.3.4 // indirect
 	github.com/sacloud/go-http v0.1.9 // indirect
-	github.com/sacloud/packages-go v0.0.11 // indirect
+	github.com/sacloud/packages-go v0.0.12 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
