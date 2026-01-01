@@ -258,7 +258,7 @@ func main() {
 	}
 
 	// Decrypt SOPS-encrypted file
-	plaintext, err := decrypt.File("secrets.enc.yaml", "yaml")
+	plaintext, err := decrypt.File("secrets.enc.json", "json")
 	if err != nil {
 		panic(err)
 	}
