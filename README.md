@@ -221,6 +221,74 @@ The tool provides the following Vault Transit Engine compatible endpoints:
 - `PUT /v1/transit/encrypt/{key_id}` - Encrypt data using specified KMS key
 - `PUT /v1/transit/decrypt/{key_id}` - Decrypt data using specified KMS key
 
+## Using as a Go Library
+
+You can embed Sakura Cloud KMS-based SOPS decryption in your Go applications by combining `RunServer` with the [SOPS decrypt package](https://pkg.go.dev/github.com/getsops/sops/v3/decrypt).
+
+```go
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"os"
+
+	ssk "github.com/fujiwara/sops-sakura-kms"
+	"github.com/getsops/sops/v3/decrypt"
+)
+
+type Config struct {
+	DatabaseURL string `json:"database_url"`
+	APIKey      string `json:"api_key"`
+}
+
+func main() {
+	ctx := context.Background()
+
+	// Start Vault Transit Engine compatible server
+	addEnv, shutdown, err := ssk.RunServer(ctx, "127.0.0.1:8200", os.Getenv("SAKURACLOUD_KMS_KEY_ID"))
+	if err != nil {
+		panic(err)
+	}
+	defer shutdown(context.Background())
+
+	// Set environment variables for SOPS library
+	for k, v := range addEnv {
+		os.Setenv(k, v)
+	}
+
+	// Decrypt SOPS-encrypted file
+	plaintext, err := decrypt.File("secrets.enc.json", "json")
+	if err != nil {
+		panic(err)
+	}
+
+	var cfg Config
+	if err := json.Unmarshal(plaintext, &cfg); err != nil {
+		panic(err)
+	}
+	// Use cfg...
+}
+```
+
+### RunServer Function
+
+```go
+func RunServer(ctx context.Context, addr, keyID string) (map[string]string, func(context.Context) error, error)
+```
+
+**Parameters:**
+- `ctx`: Context for server operations
+- `addr`: Server listen address (e.g., `"127.0.0.1:8200"`)
+- `keyID`: Sakura Cloud KMS resource ID (12-digit number)
+
+**Returns:**
+- `map[string]string`: Environment variables for SOPS (`VAULT_ADDR`, `VAULT_TOKEN`, `SOPS_VAULT_URIS`)
+- `func(context.Context) error`: Shutdown function to stop the server
+- `error`: Any error that occurred during startup
+
+**Note:** Sakura Cloud API credentials (`SAKURACLOUD_ACCESS_TOKEN`, `SAKURACLOUD_ACCESS_TOKEN_SECRET`) must be set in environment variables before calling `RunServer`.
+
 ## Development
 
 ### Running Tests

@@ -54,26 +54,12 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 
 	slog.Info("Starting Vault-compatible API server for Sakura KMS", "key_id", e.KMSKeyID, "addr", e.ServerAddr)
 
-	// 1. Create cipher
-	cipher, err := NewSakuraKMS()
+	// Start server
+	addEnv, shutdown, err := RunServer(ctx, e.ServerAddr, e.KMSKeyID)
 	if err != nil {
-		return ExitCodeError, fmt.Errorf("failed to create cipher: %w", err)
-	}
-
-	// 2. Create and start server
-	server := newServer(cipher, e.ServerAddr)
-
-	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("server error", "error", err)
-		}
-	}()
-	defer server.Shutdown(context.Background())
-
-	// 3. Wait for server to become healthy
-	if err := waitForServer(ctx, fmt.Sprintf("http://%s/health", e.ServerAddr)); err != nil {
 		return ExitCodeError, fmt.Errorf("failed to start server: %w", err)
 	}
+	defer shutdown(context.Background())
 
 	if e.ServerOnly {
 		slog.Info("Server is running in server-only mode")
@@ -83,17 +69,12 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 
 	slog.Info("Server started successfully, executing", "command", e.Command, "args", args)
 
-	// 4. Set environment variables for SOPS
-	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", e.ServerAddr, e.KMSKeyID)
-	env := append(os.Environ(),
-		"VAULT_ADDR=http://"+e.ServerAddr,
-		"VAULT_TOKEN=dummy",
-		"SOPS_VAULT_URIS="+vaultTransitURI,
-	)
-
-	// 5. Execute command
+	// Execute command
 	cmd := exec.CommandContext(ctx, e.Command, args...)
-	cmd.Env = env
+	cmd.Env = os.Environ()
+	for k, v := range addEnv {
+		cmd.Env = append(cmd.Env, k+"="+v)
+	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -106,6 +87,38 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 		return ExitCodeError, err
 	}
 	return 0, nil
+}
+
+// RunServer starts the Vault Transit Engine compatible API server.
+// Returns environment variables to configure SOPS, a shutdown function, and any error that occurred.
+func RunServer(ctx context.Context, addr, keyID string) (map[string]string, func(context.Context) error, error) {
+	// 1. Create Sakura KMS cipher
+	cipher, err := NewSakuraKMS()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create cipher: %w", err)
+	}
+
+	// 2. Create and start server
+	server := newServer(cipher, addr)
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("server error", "error", err)
+		}
+	}()
+
+	// 3. Wait for server to become healthy
+	if err := waitForServer(ctx, fmt.Sprintf("http://%s/health", addr)); err != nil {
+		return nil, nil, fmt.Errorf("failed to start server: %w", err)
+	}
+
+	// 4. Set environment variables for SOPS
+	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", addr, keyID)
+	env := map[string]string{
+		"VAULT_ADDR":      "http://" + addr,
+		"VAULT_TOKEN":     "dummy",
+		"SOPS_VAULT_URIS": vaultTransitURI,
+	}
+	return env, server.Shutdown, nil
 }
 
 func waitForServer(ctx context.Context, healthURL string) error {
@@ -161,7 +174,7 @@ func errorResponse(w http.ResponseWriter, err error, status int) {
 func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue(KeyIDPathParam)
-		slog.Info("Encrypting data with Sakura KMS", "key_id", keyID)
+		slog.Debug("Encrypting data with Sakura KMS", "key_id", keyID)
 		req, err := readRequest[VaultEncryptRequest](r)
 		if err != nil {
 			errorResponse(w, err, http.StatusBadRequest)
@@ -189,7 +202,7 @@ func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		keyID := r.PathValue(KeyIDPathParam)
-		slog.Info("Decrypting data with Sakura KMS", "key_id", keyID)
+		slog.Debug("Decrypting data with Sakura KMS", "key_id", keyID)
 		req, err := readRequest[VaultDecryptRequest](r)
 		if err != nil {
 			errorResponse(w, err, http.StatusBadRequest)
