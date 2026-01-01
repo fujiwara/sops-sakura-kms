@@ -169,6 +169,48 @@ curl -X PUT http://127.0.0.1:8200/v1/transit/decrypt/123456789012 \
   -d '{"ciphertext":"vault:v1:..."}'
 ```
 
+### Using as a Library
+
+You can use `sops-sakura-kms` as a Go library to decrypt secrets programmatically in your applications.
+
+```go
+package main
+
+import (
+	"bytes"
+	"context"
+	"fmt"
+	"log"
+	"os"
+
+	ssk "github.com/fujiwara/sops-sakura-kms"
+)
+
+func main() {
+	// Set required environment variables
+	os.Setenv("SAKURACLOUD_KMS_KEY_ID", "123456789012")
+
+	// Create an App with custom stdout to capture decrypted output
+	var stdout bytes.Buffer
+	app := ssk.NewApp(os.Stdin, &stdout, os.Stderr)
+
+	// Run sops decrypt command
+	ctx := context.Background()
+	if _, err := app.RunWrapper(ctx, []string{"-d", "secrets.enc.yaml"}); err != nil {
+		log.Fatalf("failed to decrypt: %v", err)
+	}
+
+	// Use the decrypted content
+	fmt.Println("Decrypted content:")
+	fmt.Println(stdout.String())
+}
+```
+
+This approach allows you to:
+- Capture decrypted secrets directly in memory without writing to files
+- Integrate SOPS decryption into your Go applications
+- Process secrets programmatically after decryption
+
 ### Using with Terraform
 
 You can use `sops-sakura-kms` to decrypt secrets in Terraform using the [sops_file](https://registry.terraform.io/providers/carlpett/sops/latest/docs/data-sources/file) data source.
