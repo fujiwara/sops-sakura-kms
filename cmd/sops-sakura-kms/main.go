@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -27,8 +26,7 @@ func run(ctx context.Context) (int, error) {
 	newArgs := make([]string, 0, len(args))
 	for _, arg := range args {
 		if arg == "--version" || arg == "-version" {
-			fmt.Printf("sops-sakura-kms version %s\n", app.Version)
-			return 0, nil
+			return app.ShowVersion(ctx, os.Stdout)
 		}
 		newArgs = append(newArgs, arg)
 	}
