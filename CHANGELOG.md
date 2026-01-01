@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.3.1](https://github.com/fujiwara/sops-sakura-kms/compare/v0.3.0...v0.3.1) - 2026-01-01
+- fix --version output by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/41
+
 ## [v0.3.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.2.0...v0.3.0) - 2026-01-01
 - Add RunServer function for library usage by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/38
 - Bump Songmu/tagpr from 1.9.0 to 1.10.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/36
