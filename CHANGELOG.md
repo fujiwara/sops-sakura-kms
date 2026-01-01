@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.3.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.2.0...v0.3.0) - 2026-01-01
+- Add RunServer function for library usage by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/38
+- Bump Songmu/tagpr from 1.9.0 to 1.10.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/36
+- Bump golang.org/x/sys from 0.38.0 to 0.39.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/35
+- Bump actions/checkout from 6.0.0 to 6.0.1 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/33
+- Bump docker/setup-buildx-action from 3.11.1 to 3.12.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/32
+- Bump github.com/sacloud/kms-api-go from 0.3.0 to 0.3.1 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/34
+- Support SAKURA_KMS_KEY_ID env var by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/40
+
 ## [v0.2.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.1.0...v0.2.0) - 2025-12-22
 - Replace kong with custom LoadEnv function by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/29
 - Preserve exit code from wrapped command by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/31
