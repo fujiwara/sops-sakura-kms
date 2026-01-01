@@ -5,10 +5,11 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 type Env struct {
-	KMSKeyID   string `env:"SAKURACLOUD_KMS_KEY_ID" required:""`
+	KMSKeyID   string `env:"SAKURA_KMS_KEY_ID,SAKURACLOUD_KMS_KEY_ID" required:""`
 	ServerOnly bool   `env:"SSK_SERVER_ONLY" default:"false"`
 	ServerAddr string `env:"SSK_SERVER_ADDR" default:"127.0.0.1:8200"`
 	Command    string `env:"SSK_COMMAND" default:"sops"`
@@ -26,19 +27,28 @@ func LoadEnv() (*Env, error) {
 		field := t.Field(i)
 		fieldValue := v.Field(i)
 
-		envName := field.Tag.Get("env")
-		if envName == "" {
+		envTag := field.Tag.Get("env")
+		if envTag == "" {
 			continue
 		}
 
-		value := os.Getenv(envName)
+		// Support comma-separated environment variable names (first match wins)
+		envNames := strings.Split(envTag, ",")
+		var value string
+		for _, envName := range envNames {
+			envName = strings.TrimSpace(envName)
+			if v := os.Getenv(envName); v != "" {
+				value = v
+				break
+			}
+		}
 		if value == "" {
 			value = field.Tag.Get("default")
 		}
 
 		_, required := field.Tag.Lookup("required")
 		if required && value == "" {
-			return nil, fmt.Errorf("required environment variable %s is not set", envName)
+			return nil, fmt.Errorf("required environment variable %s is not set", strings.Join(envNames, " or "))
 		}
 
 		switch fieldValue.Kind() {
@@ -48,7 +58,7 @@ func LoadEnv() (*Env, error) {
 			if value != "" {
 				b, err := strconv.ParseBool(value)
 				if err != nil {
-					return nil, fmt.Errorf("invalid boolean value for %s: %w", envName, err)
+					return nil, fmt.Errorf("invalid boolean value for %s: %w", envTag, err)
 				}
 				fieldValue.SetBool(b)
 			}

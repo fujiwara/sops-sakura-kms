@@ -114,4 +114,29 @@ func TestLoadEnv(t *testing.T) {
 			t.Fatal("expected error for invalid boolean value, got nil")
 		}
 	})
+
+	t.Run("SAKURA_KMS_KEY_ID only", func(t *testing.T) {
+		t.Setenv("SAKURA_KMS_KEY_ID", "sakura-key-id")
+
+		env, err := ssk.LoadEnv()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if env.KMSKeyID != "sakura-key-id" {
+			t.Errorf("KMSKeyID = %q, want %q", env.KMSKeyID, "sakura-key-id")
+		}
+	})
+
+	t.Run("SAKURA_KMS_KEY_ID takes priority over SAKURACLOUD_KMS_KEY_ID", func(t *testing.T) {
+		t.Setenv("SAKURA_KMS_KEY_ID", "sakura-key-id")
+		t.Setenv("SAKURACLOUD_KMS_KEY_ID", "sakuracloud-key-id")
+
+		env, err := ssk.LoadEnv()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if env.KMSKeyID != "sakura-key-id" {
+			t.Errorf("KMSKeyID = %q, want %q (SAKURA_KMS_KEY_ID should take priority)", env.KMSKeyID, "sakura-key-id")
+		}
+	})
 }

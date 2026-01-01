@@ -53,9 +53,9 @@ You can use the provided container image: [`ghcr.io/fujiwara/sops-sakura-kms`](h
 
 ```console
 $ docker run --rm \
-    -e SAKURACLOUD_ACCESS_TOKEN \
-    -e SAKURACLOUD_ACCESS_TOKEN_SECRET \
-    -e SAKURACLOUD_KMS_KEY_ID \
+    -e SAKURA_ACCESS_TOKEN \
+    -e SAKURA_ACCESS_TOKEN_SECRET \
+    -e SAKURA_KMS_KEY_ID \
     -v $(pwd):/work -w /work \
     ghcr.io/fujiwara/sops-sakura-kms:v0.0.7 \
     -d secrets.enc.yaml
@@ -74,12 +74,20 @@ Set the following environment variables:
 
 ```bash
 # Sakura Cloud API credentials
-export SAKURACLOUD_ACCESS_TOKEN="your-access-token"
-export SAKURACLOUD_ACCESS_TOKEN_SECRET="your-access-token-secret"
+export SAKURA_ACCESS_TOKEN="your-access-token"
+export SAKURA_ACCESS_TOKEN_SECRET="your-access-token-secret"
 
 # Sakura Cloud KMS Resource ID (12-digit number as string, e.g., 123456789012)
-export SAKURACLOUD_KMS_KEY_ID="123456789012"
+export SAKURA_KMS_KEY_ID="123456789012"
 ```
+
+**Note:** For backward compatibility, the following alternative environment variable names are also supported. If both are set, `SAKURA_*` takes priority.
+
+| Primary (Recommended) | Alternative |
+|----------------------|-------------|
+| `SAKURA_ACCESS_TOKEN` | `SAKURACLOUD_ACCESS_TOKEN` |
+| `SAKURA_ACCESS_TOKEN_SECRET` | `SAKURACLOUD_ACCESS_TOKEN_SECRET` |
+| `SAKURA_KMS_KEY_ID` | `SAKURACLOUD_KMS_KEY_ID` |
 
 ### Optional Environment Variables
 
@@ -246,7 +254,7 @@ func main() {
 	ctx := context.Background()
 
 	// Start Vault Transit Engine compatible server
-	addEnv, shutdown, err := ssk.RunServer(ctx, "127.0.0.1:8200", os.Getenv("SAKURACLOUD_KMS_KEY_ID"))
+	addEnv, shutdown, err := ssk.RunServer(ctx, "127.0.0.1:8200", os.Getenv("SAKURA_KMS_KEY_ID"))
 	if err != nil {
 		panic(err)
 	}
@@ -287,7 +295,7 @@ func RunServer(ctx context.Context, addr, keyID string) (map[string]string, func
 - `func(context.Context) error`: Shutdown function to stop the server
 - `error`: Any error that occurred during startup
 
-**Note:** Sakura Cloud API credentials (`SAKURACLOUD_ACCESS_TOKEN`, `SAKURACLOUD_ACCESS_TOKEN_SECRET`) must be set in environment variables before calling `RunServer`.
+**Note:** Sakura Cloud API credentials (`SAKURA_ACCESS_TOKEN`, `SAKURA_ACCESS_TOKEN_SECRET`) must be set in environment variables before calling `RunServer`.
 
 ## Development
 
