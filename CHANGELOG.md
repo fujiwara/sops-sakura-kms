@@ -1,5 +1,16 @@
 # Changelog
 
+## [v0.4.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.3.0...v0.4.0) - 2026-03-16
+- fix --version output by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/41
+- Bump golang.org/x/sys from 0.39.0 to 0.41.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/51
+- Bump actions/setup-go from 6.1.0 to 6.3.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/49
+- Bump Songmu/tagpr from 1.10.0 to 1.17.1 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/48
+- Bump docker/login-action from 3.6.0 to 3.7.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/46
+- Bump actions/checkout from 6.0.1 to 6.0.2 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/43
+- Add RunServerWithCipher for custom Cipher injection by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/52
+- Bump kms-api-go to v0.4.0 with API migration by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/53
+- Bump github.com/sacloud/kms-api-go from 0.3.1 to 0.4.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/50
+
 ## [v0.3.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.2.0...v0.3.0) - 2026-01-01
 - Add RunServer function for library usage by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/38
 - Bump Songmu/tagpr from 1.9.0 to 1.10.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/36
