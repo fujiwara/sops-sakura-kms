@@ -3,9 +3,11 @@ package ssk
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/sacloud/kms-api-go"
 	v1 "github.com/sacloud/kms-api-go/apis/v1"
+	"github.com/sacloud/saclient-go"
 )
 
 // Cipher defines the interface for encryption and decryption operations.
@@ -26,7 +28,12 @@ type SakuraKMS struct {
 // NewSakuraKMS creates a new SakuraKMS instance.
 // It reads credentials from environment variables (SAKURACLOUD_ACCESS_TOKEN, SAKURACLOUD_ACCESS_TOKEN_SECRET).
 func NewSakuraKMS() (*SakuraKMS, error) {
-	client, err := kms.NewClient()
+	var sc saclient.Client
+	sc.SetEnviron(os.Environ())
+	if err := sc.Populate(); err != nil {
+		return nil, fmt.Errorf("failed to configure saclient: %w", err)
+	}
+	client, err := kms.NewClient(&sc)
 	if err != nil {
 		return nil, err
 	}
