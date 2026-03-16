@@ -89,16 +89,19 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 	return 0, nil
 }
 
-// RunServer starts the Vault Transit Engine compatible API server.
+// RunServer starts the Vault Transit Engine compatible API server using Sakura Cloud KMS.
 // Returns environment variables to configure SOPS, a shutdown function, and any error that occurred.
 func RunServer(ctx context.Context, addr, keyID string) (map[string]string, func(context.Context) error, error) {
-	// 1. Create Sakura KMS cipher
 	cipher, err := NewSakuraKMS()
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create cipher: %w", err)
 	}
+	return RunServerWithCipher(ctx, addr, keyID, cipher)
+}
 
-	// 2. Create and start server
+// RunServerWithCipher starts the Vault Transit Engine compatible API server with the given Cipher.
+// Returns environment variables to configure SOPS, a shutdown function, and any error that occurred.
+func RunServerWithCipher(ctx context.Context, addr, keyID string, cipher Cipher) (map[string]string, func(context.Context) error, error) {
 	server := newServer(cipher, addr)
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -106,12 +109,10 @@ func RunServer(ctx context.Context, addr, keyID string) (map[string]string, func
 		}
 	}()
 
-	// 3. Wait for server to become healthy
 	if err := waitForServer(ctx, fmt.Sprintf("http://%s/health", addr)); err != nil {
 		return nil, nil, fmt.Errorf("failed to start server: %w", err)
 	}
 
-	// 4. Set environment variables for SOPS
 	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", addr, keyID)
 	env := map[string]string{
 		"VAULT_ADDR":      "http://" + addr,
