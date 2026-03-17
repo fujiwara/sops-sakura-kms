@@ -8,7 +8,7 @@ import (
 	"os/exec"
 )
 
-var Version = "v0.4.0"
+var Version = "v0.4.1"
 
 func ShowVersion(ctx context.Context, w io.Writer) (int, error) {
 	// Ensure self Version is printed even if error occurs later
