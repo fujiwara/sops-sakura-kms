@@ -179,7 +179,7 @@ curl -X PUT http://127.0.0.1:8200/v1/transit/decrypt/123456789012 \
 
 ### Using with Terraform
 
-You can use `sops-sakura-kms` to decrypt secrets in Terraform using the [sops_file](https://registry.terraform.io/providers/carlpett/sops/latest/docs/data-sources/file) data source.
+Use [terraform-provider-sops-sakura-kms](https://github.com/fujiwara/terraform-provider-sops-sakura-kms) to decrypt SOPS-encrypted files in Terraform. The provider starts the Vault Transit compatible server in-process, so no wrapper or background process is needed.
 
 First, create an encrypted file with SOPS:
 
@@ -194,10 +194,13 @@ Then, use the encrypted file in Terraform:
 terraform {
   required_providers {
     sops = {
-      source  = "carlpett/sops"
-      version = "~> 1.0"
+      source = "fujiwara/sops-sakura-kms"
     }
   }
+}
+
+provider "sops" {
+  key_id = "123456789012"  # Sakura Cloud KMS resource ID
 }
 
 data "sops_file" "secrets" {
@@ -210,16 +213,7 @@ output "secret_value" {
 }
 ```
 
-Run Terraform with `sops-sakura-kms`:
-
-```bash
-# Set SSK_COMMAND to run terraform instead of sops
-export SSK_COMMAND=terraform
-sops-sakura-kms plan
-sops-sakura-kms apply
-```
-
-The wrapper automatically starts the Vault Transit Engine compatible server, sets the required environment variables (`VAULT_ADDR`, `VAULT_TOKEN`, `SOPS_VAULT_URIS`), and executes Terraform. The sops provider will use the local server to decrypt secrets.
+See the [provider documentation](https://registry.terraform.io/providers/fujiwara/sops-sakura-kms/latest/docs) for details on authentication and configuration.
 
 ## API Endpoints
 
@@ -282,20 +276,23 @@ func main() {
 ### RunServer Function
 
 ```go
-func RunServer(ctx context.Context, addr, keyID string) (map[string]string, func(context.Context) error, error)
+func RunServer(ctx context.Context, addr, keyID string, opts ...Option) (map[string]string, func(context.Context) error, error)
 ```
 
 **Parameters:**
 - `ctx`: Context for server operations
 - `addr`: Server listen address (e.g., `"127.0.0.1:8200"`)
 - `keyID`: Sakura Cloud KMS resource ID (12-digit number)
+- `opts`: Functional options:
+  - `WithClient(saclient.ClientAPI)`: Use a pre-configured saclient instead of environment variables
+  - `WithCipher(Cipher)`: Use a custom Cipher implementation (for testing)
 
 **Returns:**
 - `map[string]string`: Environment variables for SOPS (`VAULT_ADDR`, `VAULT_TOKEN`, `SOPS_VAULT_URIS`)
 - `func(context.Context) error`: Shutdown function to stop the server
 - `error`: Any error that occurred during startup
 
-**Note:** Sakura Cloud API credentials (`SAKURA_ACCESS_TOKEN`, `SAKURA_ACCESS_TOKEN_SECRET`) must be set in environment variables before calling `RunServer`.
+**Note:** Without `WithClient`, Sakura Cloud API credentials (`SAKURA_ACCESS_TOKEN`, `SAKURA_ACCESS_TOKEN_SECRET`) must be set in environment variables.
 
 ## Development
 
