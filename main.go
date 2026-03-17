@@ -12,6 +12,8 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+
+	"github.com/sacloud/saclient-go"
 )
 
 const (
@@ -89,19 +91,57 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 	return 0, nil
 }
 
-// RunServer starts the Vault Transit Engine compatible API server using Sakura Cloud KMS.
-// Returns environment variables to configure SOPS, a shutdown function, and any error that occurred.
-func RunServer(ctx context.Context, addr, keyID string) (map[string]string, func(context.Context) error, error) {
-	cipher, err := NewSakuraKMS()
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create cipher: %w", err)
-	}
-	return RunServerWithCipher(ctx, addr, keyID, cipher)
+// Option is a functional option for RunServer.
+type Option func(*serverOptions)
+
+type serverOptions struct {
+	cipher Cipher
+	client saclient.ClientAPI
 }
 
-// RunServerWithCipher starts the Vault Transit Engine compatible API server with the given Cipher.
+// WithCipher sets a custom Cipher implementation. Useful for testing.
+func WithCipher(c Cipher) Option {
+	return func(o *serverOptions) {
+		o.cipher = c
+	}
+}
+
+// WithClient sets a saclient.ClientAPI for creating the KMS cipher.
+// This takes precedence over the default environment variable-based client.
+func WithClient(c saclient.ClientAPI) Option {
+	return func(o *serverOptions) {
+		o.client = c
+	}
+}
+
+// RunServer starts the Vault Transit Engine compatible API server.
+// Without options, it uses Sakura Cloud KMS with credentials from environment variables.
+// Use WithCipher to provide a custom cipher, or WithClient to provide a pre-configured saclient.
 // Returns environment variables to configure SOPS, a shutdown function, and any error that occurred.
-func RunServerWithCipher(ctx context.Context, addr, keyID string, cipher Cipher) (map[string]string, func(context.Context) error, error) {
+func RunServer(ctx context.Context, addr, keyID string, opts ...Option) (map[string]string, func(context.Context) error, error) {
+	var o serverOptions
+	for _, opt := range opts {
+		opt(&o)
+	}
+	if o.cipher == nil {
+		var (
+			cipher Cipher
+			err    error
+		)
+		if o.client != nil {
+			cipher, err = NewSakuraKMSWithClient(o.client)
+		} else {
+			cipher, err = NewSakuraKMS()
+		}
+		if err != nil {
+			return nil, nil, fmt.Errorf("failed to create cipher: %w", err)
+		}
+		o.cipher = cipher
+	}
+	return runServer(ctx, addr, keyID, o.cipher)
+}
+
+func runServer(ctx context.Context, addr, keyID string, cipher Cipher) (map[string]string, func(context.Context) error, error) {
 	server := newServer(cipher, addr)
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
