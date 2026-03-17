@@ -33,7 +33,16 @@ func NewSakuraKMS() (*SakuraKMS, error) {
 	if err := sc.Populate(); err != nil {
 		return nil, fmt.Errorf("failed to configure saclient: %w", err)
 	}
-	client, err := kms.NewClient(&sc)
+	return newSakuraKMSFromClient(&sc)
+}
+
+// NewSakuraKMSWithClient creates a new SakuraKMS instance with the given saclient.ClientAPI.
+func NewSakuraKMSWithClient(c saclient.ClientAPI) (*SakuraKMS, error) {
+	return newSakuraKMSFromClient(c)
+}
+
+func newSakuraKMSFromClient(c saclient.ClientAPI) (*SakuraKMS, error) {
+	client, err := kms.NewClient(c)
 	if err != nil {
 		return nil, err
 	}

@@ -13,7 +13,11 @@
 // Vault Transit Engine compatible server, then use the SOPS decrypt package
 // to decrypt files.
 //
-//	addEnv, shutdown, err := ssk.RunServer(ctx, "127.0.0.1:8200", keyID)
+//	addEnv, shutdown, err := ssk.RunServer(ctx, "127.0.0.1:8200", keyID) // uses env vars
+//
+// Or with a pre-configured saclient:
+//
+//	addEnv, shutdown, err := ssk.RunServer(ctx, "127.0.0.1:8200", keyID, ssk.WithClient(client))
 //	if err != nil {
 //	    return err
 //	}
