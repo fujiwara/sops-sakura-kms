@@ -1,5 +1,8 @@
 # Changelog
 
+## [v0.4.1](https://github.com/fujiwara/sops-sakura-kms/compare/v0.4.0...v0.4.1) - 2026-03-17
+- Add functional options to RunServer by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/55
+
 ## [v0.4.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.3.0...v0.4.0) - 2026-03-16
 - fix --version output by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/41
 - Bump golang.org/x/sys from 0.39.0 to 0.41.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/51
