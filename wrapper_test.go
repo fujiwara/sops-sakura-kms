@@ -56,14 +56,27 @@ func TestRunWrapperExitCode(t *testing.T) {
 	}
 }
 
-func TestRunWrapperMissingKeyID(t *testing.T) {
+func TestRunWrapperEmptyKeyID(t *testing.T) {
 	t.Setenv("SAKURACLOUD_KMS_KEY_ID", "")
+	t.Setenv("SSK_COMMAND", "sh")
 
-	exitCode, err := ssk.RunWrapper(context.Background(), []string{})
-	if err == nil {
-		t.Fatal("expected error for missing key ID, got nil")
-	}
-	if exitCode != ssk.ExitCodeError {
-		t.Errorf("exitCode = %d, want %d", exitCode, ssk.ExitCodeError)
-	}
+	t.Run("success without key ID", func(t *testing.T) {
+		exitCode, err := ssk.RunWrapper(context.Background(), []string{"-c", "exit 0"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if exitCode != 0 {
+			t.Errorf("exitCode = %d, want 0", exitCode)
+		}
+	})
+
+	t.Run("error without key ID", func(t *testing.T) {
+		exitCode, err := ssk.RunWrapper(context.Background(), []string{"-c", "exit 1"})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if exitCode != 1 {
+			t.Errorf("exitCode = %d, want 1", exitCode)
+		}
+	})
 }

@@ -51,11 +51,14 @@ func TestParseEnvDefault(t *testing.T) {
 	}
 }
 
-func TestParseEnvRequired(t *testing.T) {
+func TestParseEnvEmptyKeyID(t *testing.T) {
 	t.Setenv("SAKURACLOUD_KMS_KEY_ID", "")
-	_, err := ssk.LoadEnv()
-	if err == nil {
-		t.Fatal("expected error for missing required field, got nil")
+	e, err := ssk.LoadEnv()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if e.KMSKeyID != "" {
+		t.Errorf("KMSKeyID = %q, want empty", e.KMSKeyID)
 	}
 }
 
@@ -97,11 +100,14 @@ func TestLoadEnv(t *testing.T) {
 		}
 	})
 
-	t.Run("required field missing", func(t *testing.T) {
+	t.Run("empty key ID", func(t *testing.T) {
 		t.Setenv("SAKURACLOUD_KMS_KEY_ID", "")
-		_, err := ssk.LoadEnv()
-		if err == nil {
-			t.Fatal("expected error for missing required field, got nil")
+		env, err := ssk.LoadEnv()
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if env.KMSKeyID != "" {
+			t.Errorf("KMSKeyID = %q, want empty", env.KMSKeyID)
 		}
 	})
 

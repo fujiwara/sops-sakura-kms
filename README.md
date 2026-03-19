@@ -78,6 +78,8 @@ export SAKURA_ACCESS_TOKEN="your-access-token"
 export SAKURA_ACCESS_TOKEN_SECRET="your-access-token-secret"
 
 # Sakura Cloud KMS Resource ID (12-digit number as string, e.g., 123456789012)
+# Required for encryption when hc_vault_transit_uri is not configured in .sops.yaml
+# Not required for decryption (the key ID is stored in the encrypted file)
 export SAKURA_KMS_KEY_ID="123456789012"
 ```
 
@@ -122,8 +124,8 @@ sops-sakura-kms secrets.enc.yaml
 ### How it works
 
 1. `sops-sakura-kms` starts a local Vault Transit Engine compatible HTTP server on `127.0.0.1:8200`
-2. Automatically sets the `SOPS_VAULT_URIS` environment variable to `http://127.0.0.1:8200/v1/transit/encrypt/{key_id}`
-3. Sets required environment variables (`VAULT_ADDR`, `VAULT_TOKEN`)
+2. Sets required environment variables (`VAULT_ADDR`, `VAULT_TOKEN`)
+3. If `SAKURA_KMS_KEY_ID` is set, automatically sets the `SOPS_VAULT_URIS` environment variable to `http://127.0.0.1:8200/v1/transit/encrypt/{key_id}`
 4. Executes SOPS with the configured environment
 5. The server handles encryption/decryption requests from SOPS using Sakura Cloud KMS
 
@@ -132,7 +134,7 @@ sops-sakura-kms secrets.enc.yaml
 `sops-sakura-kms` preserves the exit code from the wrapped command (SOPS or custom command specified by `SSK_COMMAND`).
 
 - If the wrapped command exits with code N, `sops-sakura-kms` also exits with code N
-- If an error occurs before executing the wrapped command (e.g., missing environment variables, server startup failure), `sops-sakura-kms` exits with code 1
+- If an error occurs before executing the wrapped command (e.g., server startup failure), `sops-sakura-kms` exits with code 1
 
 ### SOPS Configuration
 
@@ -312,7 +314,7 @@ func RunServer(ctx context.Context, addr, keyID string, opts ...Option) (map[str
   - `WithCipher(Cipher)`: Use a custom Cipher implementation (for testing)
 
 **Returns:**
-- `map[string]string`: Environment variables for SOPS (`VAULT_ADDR`, `VAULT_TOKEN`, `SOPS_VAULT_URIS`)
+- `map[string]string`: Environment variables for SOPS (`VAULT_ADDR`, `VAULT_TOKEN`, and `SOPS_VAULT_URIS` if `keyID` is non-empty)
 - `func(context.Context) error`: Shutdown function to stop the server
 - `error`: Any error that occurred during startup
 
