@@ -1,4 +1,4 @@
-FROM --platform=${BUILDPLATFORM} golang:1.25 AS build-env
+FROM --platform=${BUILDPLATFORM} golang:1.26 AS build-env
 
 ARG TARGETOS
 ARG TARGETARCH
