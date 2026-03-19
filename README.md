@@ -164,6 +164,12 @@ With this configuration, SOPS encrypts the data key with both Sakura Cloud KMS a
 
 Once a file is encrypted with multiple keys, decryption with non-Sakura Cloud KMS keys (e.g., age) can be done with the standard `sops` command directly — `sops-sakura-kms` wrapper is only needed when using the Sakura Cloud KMS key.
 
+If you add or remove keys in `.sops.yaml` after a file has already been encrypted, run `sops updatekeys` to re-encrypt the data key with the updated set of keys:
+
+```bash
+sops-sakura-kms updatekeys secrets.enc.yaml
+```
+
 ### Server-Only Mode
 
 You can run `sops-sakura-kms` as a standalone Vault Transit Engine compatible server without executing SOPS:
