@@ -146,6 +146,24 @@ creation_rules:
 
 **Note**: The wrapper automatically sets the `SOPS_VAULT_URIS` environment variable, so you don't need to configure it manually in `.sops.yaml` or pass it as a command-line argument.
 
+#### Using Multiple Keys
+
+To use Sakura Cloud KMS alongside other encryption methods (e.g., age), explicitly specify `hc_vault_transit_uri` in `.sops.yaml` along with the other key configuration:
+
+```yaml
+creation_rules:
+  - path_regex: \.yaml$
+    hc_vault_transit_uri: http://127.0.0.1:8200/v1/transit/keys/123456789012
+    age: >-
+      ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIExample...
+```
+
+With this configuration, SOPS encrypts the data key with both Sakura Cloud KMS and age. Decryption succeeds if **either** key is available, providing redundancy across different key management systems.
+
+**Note**: When using multiple keys, `hc_vault_transit_uri` must be specified in `.sops.yaml` because `SOPS_VAULT_URIS` alone does not allow SOPS to combine it with other key types in the creation rules.
+
+Once a file is encrypted with multiple keys, decryption with non-Sakura Cloud KMS keys (e.g., age) can be done with the standard `sops` command directly — `sops-sakura-kms` wrapper is only needed when using the Sakura Cloud KMS key.
+
 ### Server-Only Mode
 
 You can run `sops-sakura-kms` as a standalone Vault Transit Engine compatible server without executing SOPS:
