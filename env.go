@@ -9,7 +9,7 @@ import (
 )
 
 type Env struct {
-	KMSKeyID   string `env:"SAKURA_KMS_KEY_ID,SAKURACLOUD_KMS_KEY_ID" required:""`
+	KMSKeyID   string `env:"SAKURA_KMS_KEY_ID,SAKURACLOUD_KMS_KEY_ID"`
 	ServerOnly bool   `env:"SSK_SERVER_ONLY" default:"false"`
 	ServerAddr string `env:"SSK_SERVER_ADDR" default:"127.0.0.1:8200"`
 	Command    string `env:"SSK_COMMAND" default:"sops"`

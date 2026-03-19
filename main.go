@@ -82,6 +82,9 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 	cmd.Stderr = os.Stderr
 
 	if err := cmd.Run(); err != nil {
+		if e.KMSKeyID == "" {
+			slog.Warn("command exited with error. If you need to encrypt, set SAKURA_KMS_KEY_ID or configure hc_vault_transit_uri in .sops.yaml")
+		}
 		var exitErr *exec.ExitError
 		if errors.As(err, &exitErr) {
 			return exitErr.ExitCode(), nil
@@ -153,11 +156,12 @@ func runServer(ctx context.Context, addr, keyID string, cipher Cipher) (map[stri
 		return nil, nil, fmt.Errorf("failed to start server: %w", err)
 	}
 
-	vaultTransitURI := fmt.Sprintf("http://%s/v1/transit/encrypt/%s", addr, keyID)
 	env := map[string]string{
-		"VAULT_ADDR":      "http://" + addr,
-		"VAULT_TOKEN":     "dummy",
-		"SOPS_VAULT_URIS": vaultTransitURI,
+		"VAULT_ADDR":  "http://" + addr,
+		"VAULT_TOKEN": "dummy",
+	}
+	if keyID != "" {
+		env["SOPS_VAULT_URIS"] = fmt.Sprintf("http://%s/v1/transit/encrypt/%s", addr, keyID)
 	}
 	return env, server.Shutdown, nil
 }
