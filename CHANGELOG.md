@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.5.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.4.1...v0.5.0) - 2026-03-19
+- Update Terraform section to use terraform-provider-sops-sakura-kms by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/57
+- Add multiple keys usage example to README by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/59
+- Add updatekeys instructions for multiple keys by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/60
+- Make SAKURA_KMS_KEY_ID optional by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/61
+- Update Go to 1.26 in CI and Dockerfile by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/62
+
 ## [v0.4.1](https://github.com/fujiwara/sops-sakura-kms/compare/v0.4.0...v0.4.1) - 2026-03-17
 - Add functional options to RunServer by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/55
 
