@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.5.1](https://github.com/fujiwara/sops-sakura-kms/compare/v0.5.0...v0.5.1) - 2026-05-13
+- Improve signal handling for sops exec-env and editor sub-processes by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/72
+- Bump golang.org/x/sys from 0.41.0 to 0.44.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/71
+- Update README.md by @repeatedly in https://github.com/fujiwara/sops-sakura-kms/pull/70
+- Bump Songmu/tagpr to v1.19.0 and merge dependabot updates by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/74
+
 ## [v0.5.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.4.1...v0.5.0) - 2026-03-19
 - Update Terraform section to use terraform-provider-sops-sakura-kms by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/57
 - Add multiple keys usage example to README by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/59
