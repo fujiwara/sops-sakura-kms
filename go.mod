@@ -5,7 +5,9 @@ go 1.25.0
 require (
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/vault/api v1.22.0
+	github.com/mattn/go-isatty v0.0.20
 	github.com/sacloud/kms-api-go v0.4.0
+	github.com/sacloud/saclient-go v0.3.1
 	golang.org/x/sys v0.41.0
 )
 
@@ -32,7 +34,6 @@ require (
 	github.com/hashicorp/go-sockaddr v1.0.7 // indirect
 	github.com/hashicorp/hcl v1.0.1-vault-7 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
-	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/ogen-go/ogen v1.15.1 // indirect
@@ -40,7 +41,6 @@ require (
 	github.com/sacloud/api-client-go v0.3.5 // indirect
 	github.com/sacloud/go-http v0.1.9 // indirect
 	github.com/sacloud/packages-go v0.0.12 // indirect
-	github.com/sacloud/saclient-go v0.3.1 // indirect
 	github.com/segmentio/asm v1.2.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/ratelimit v0.3.1 // indirect
