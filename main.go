@@ -10,9 +10,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"slices"
 	"strings"
+	"syscall"
 	"time"
 
+	"github.com/mattn/go-isatty"
 	"github.com/sacloud/saclient-go"
 )
 
@@ -23,6 +26,13 @@ const (
 	// ExitCodeError is the exit code returned when an error occurs in the application.
 	ExitCodeError = 1
 )
+
+// IsStdinTerminal reports whether stdin is a terminal. It is a
+// package variable so tests can substitute their own check; production
+// callers should leave it alone.
+var IsStdinTerminal = func() bool {
+	return isatty.IsTerminal(os.Stdin.Fd())
+}
 
 // NewMux creates a new HTTP ServeMux with Vault Transit Engine compatible API endpoints.
 func NewMux(cipher Cipher) *http.ServeMux {
@@ -71,8 +81,30 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 
 	slog.Info("Server started successfully, executing", "command", e.Command, "args", args)
 
-	// Execute command
-	cmd := exec.CommandContext(ctx, e.Command, args...)
+	// Execute command. `sops exec-env` from a tty typically launches an
+	// interactive program (mysql cli, editor, ...) that wants to handle
+	// Ctrl-C on its own — and possibly receive many of them. SIGINT
+	// reaches the child via the foreground process group, so we must
+	// not pass ctx to exec there (CommandContext would SIGKILL the
+	// child the moment our own ctx is cancelled by the inherited
+	// SIGINT).
+	//
+	// Everywhere else we keep exec.CommandContext but override its
+	// Cancel to send SIGTERM rather than the default SIGKILL, with a
+	// short WaitDelay as the SIGKILL escalation grace period. This
+	// lets the child (sops itself, an editor under `sops -i`, a batch
+	// process under non-tty `exec-env`, ...) clean up before exiting.
+	isExecEnv := slices.Contains(args, "exec-env")
+	var cmd *exec.Cmd
+	if isExecEnv && IsStdinTerminal() {
+		cmd = exec.Command(e.Command, args...)
+	} else {
+		cmd = exec.CommandContext(ctx, e.Command, args...)
+		cmd.Cancel = func() error {
+			return cmd.Process.Signal(syscall.SIGTERM)
+		}
+		cmd.WaitDelay = 5 * time.Second
+	}
 	cmd.Env = os.Environ()
 	for k, v := range addEnv {
 		cmd.Env = append(cmd.Env, k+"="+v)
