@@ -32,9 +32,9 @@
 // # Environment Variables
 //
 // The following environment variables must be set:
-//   - SAKURACLOUD_ACCESS_TOKEN: Sakura Cloud API access token
-//   - SAKURACLOUD_ACCESS_TOKEN_SECRET: Sakura Cloud API access token secret
+//   - SAKURA_ACCESS_TOKEN: Sakura Cloud API access token
+//   - SAKURA_ACCESS_TOKEN_SECRET: Sakura Cloud API access token secret
 //
 // For wrapper mode, also set:
-//   - SAKURACLOUD_KMS_KEY_ID: Sakura Cloud KMS resource ID (12-digit number)
+//   - SAKURA_KMS_KEY_ID: Sakura Cloud KMS resource ID (12-digit number)
 package ssk

@@ -16,7 +16,7 @@ The tool automatically:
 
 ### Wrapper Mode (Primary Use Case)
 The tool operates as a SOPS wrapper via `RunWrapper()` function:
-- Reads `SAKURACLOUD_KMS_KEY_ID` environment variable (12-digit Sakura Cloud resource ID as string)
+- Reads `SAKURA_KMS_KEY_ID` environment variable (12-digit Sakura Cloud resource ID as string)
 - Starts HTTP server on `127.0.0.1:8200` in background
 - Waits for server health check (30 retries × 100ms)
 - Automatically sets `SOPS_VAULT_URIS=http://127.0.0.1:8200/v1/transit/encrypt/{key_id}` environment variable
@@ -36,7 +36,7 @@ The tool operates as a SOPS wrapper via `RunWrapper()` function:
   - `DecryptHandlerFunc(cipher)`: Decrypt endpoint handler
   - `waitForServer()`: Polls health endpoint until ready
 - **cipher.go**: `Cipher` interface and `SakuraKMS` implementation
-  - Uses `github.com/sacloud/kms-api-go` for Sakura Cloud KMS API
+  - Uses `github.com/sacloud/sacloud-sdk-go/api/kms` for Sakura Cloud KMS API
   - Encrypts with AES-256-GCM algorithm
 - **types.go**: Vault Transit Engine compatible request/response types
   - All plaintext/ciphertext are base64-encoded strings for Vault API compatibility
@@ -62,7 +62,7 @@ go test -v ./...       # Run all tests with verbose output
 go test -race ./...    # Run tests with race detector (used in CI)
 ```
 
-Set `KEY_ID` environment variable to run integration tests that actually call Sakura Cloud KMS API.
+Integration tests run against [sakumock](https://github.com/sacloud/sakumock) (in-process Sakura Cloud KMS mock) by default. Set `KEY_ID` environment variable to also run the test that actually calls Sakura Cloud KMS API.
 
 ### Install
 ```bash
@@ -88,6 +88,11 @@ goreleaser build --snapshot --clean
 - **wrapper_test.go**: `RunWrapper()` function tests
   - Tests environment variable validation
   - Does not test full SOPS integration (requires SOPS binary)
+- **sakumock_test.go**: Integration tests using `github.com/sacloud/sakumock/kms`
+  - Starts an in-process mock KMS server with a fixed key ID (`123456789012`)
+  - Tests `SakuraKMS` encrypt/decrypt, `RunServer()` via the Vault API client, and
+    end-to-end `RunWrapper()` with the real `sops` binary (skipped if `sops` is not in `PATH`)
+  - No credentials required; `SAKURA_ENDPOINTS_KMS` points sacloud-sdk-go at the mock
 - **kms_test.go**: Integration tests with actual Sakura Cloud KMS
   - Requires `KEY_ID` environment variable (12-digit resource ID)
   - Skipped if `KEY_ID` is not set
@@ -95,6 +100,7 @@ goreleaser build --snapshot --clean
 
 ### Key Testing Principles
 - Mock cipher for unit tests (no external dependencies)
+- sakumock for integration tests (no network access or credentials)
 - All tests use `NewMux()` to create handlers consistently
 - Integration tests can be skipped without blocking development
 - Error handling is thoroughly tested (invalid JSON, missing prefix, etc.)
@@ -102,7 +108,7 @@ goreleaser build --snapshot --clean
 ## Important Design Decisions
 
 ### Why Wrapper Mode?
-The wrapper approach allows dynamic configuration based on `SAKURACLOUD_KMS_KEY_ID` by automatically setting the `SOPS_VAULT_URIS` environment variable.
+The wrapper approach allows dynamic configuration based on `SAKURA_KMS_KEY_ID` by automatically setting the `SOPS_VAULT_URIS` environment variable.
 
 ### Why Use SOPS_VAULT_URIS?
 SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Transit Engine URIs. Using this environment variable instead of command-line flags prevents issues with argument ordering when executing SOPS.
@@ -116,9 +122,9 @@ SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Tran
 ### Constants
 - `VaultPrefix = "vault:v1:"` - Required by SOPS for Vault Transit Engine compatibility
 - `KeyIDPathParam = "key_id"` - URL path parameter name
-- `EnvKeyID = "SAKURACLOUD_KMS_KEY_ID"` - Environment variable for KMS resource ID
+- `SAKURA_KMS_KEY_ID` - Environment variable for KMS resource ID (defined by the `env` struct tag in `env.go`; the legacy `SAKURACLOUD_KMS_KEY_ID` is still accepted as a fallback)
 - `ServerAddr = "127.0.0.1:8200"` - Standard Vault server address (localhost only)
 
 ## Go Version
 
-This project uses Go 1.24+ (as specified in go.mod). CI tests against Go 1.23 and 1.24.
+This project uses Go 1.26+ (as specified in go.mod, required by sacloud-sdk-go). CI tests against Go 1.26.

@@ -39,7 +39,7 @@ func startWrapperHelper(t *testing.T, addr, args string, tty bool) *exec.Cmd {
 	env := append(os.Environ(),
 		"SSK_TEST_HELPER=1",
 		"SSK_TEST_ARGS="+args,
-		"SAKURACLOUD_KMS_KEY_ID=test-key-id",
+		"SAKURA_KMS_KEY_ID=test-key-id",
 		"SSK_COMMAND=sh",
 		"SSK_SERVER_ADDR="+addr,
 	)

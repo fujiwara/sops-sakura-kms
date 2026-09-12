@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"github.com/mattn/go-isatty"
-	"github.com/sacloud/saclient-go"
+	"github.com/sacloud/sacloud-sdk-go/common/saclient"
 )
 
 const (
@@ -117,8 +117,7 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 		if e.KMSKeyID == "" {
 			slog.Warn("command exited with error. If you need to encrypt, set SAKURA_KMS_KEY_ID or configure hc_vault_transit_uri in .sops.yaml")
 		}
-		var exitErr *exec.ExitError
-		if errors.As(err, &exitErr) {
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
 			return exitErr.ExitCode(), nil
 		}
 		return ExitCodeError, err

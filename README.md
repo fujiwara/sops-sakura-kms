@@ -83,10 +83,10 @@ export SAKURA_ACCESS_TOKEN_SECRET="your-access-token-secret"
 export SAKURA_KMS_KEY_ID="123456789012"
 ```
 
-**Note:** For backward compatibility, the following alternative environment variable names are also supported. If both are set, `SAKURA_*` takes priority.
+**Note:** The legacy `SAKURACLOUD_*` names are still accepted for backward compatibility, but new configurations should use the `SAKURA_*` names, which match the current Sakura Cloud SDK. If both are set, `SAKURA_*` takes priority.
 
-| Primary (Recommended) | Alternative |
-|----------------------|-------------|
+| Primary (Recommended) | Legacy |
+|----------------------|--------|
 | `SAKURA_ACCESS_TOKEN` | `SAKURACLOUD_ACCESS_TOKEN` |
 | `SAKURA_ACCESS_TOKEN_SECRET` | `SAKURACLOUD_ACCESS_TOKEN_SECRET` |
 | `SAKURA_KMS_KEY_ID` | `SAKURACLOUD_KMS_KEY_ID` |
@@ -331,6 +331,8 @@ go test ./...
 # Run tests with actual Sakura Cloud KMS (requires credentials and KEY_ID)
 KEY_ID=123456789012 go test ./...
 ```
+
+Integration tests use [sakumock](https://github.com/sacloud/sakumock), an in-process mock of the Sakura Cloud KMS API, so they run without credentials. The end-to-end test that runs the real `sops` binary through the wrapper is skipped when `sops` is not found in `PATH`.
 
 ### Building
 
