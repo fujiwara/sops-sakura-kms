@@ -127,4 +127,4 @@ SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Tran
 
 ## Go Version
 
-This project uses Go 1.26+ (as specified in go.mod, required by sacloud-sdk-go). CI tests against Go 1.26.
+This project uses Go 1.26+ (as specified in go.mod, required by sacloud-sdk-go). CI tests against Go 1.26 and 1.27.
