@@ -16,7 +16,7 @@ The tool automatically:
 
 ### Wrapper Mode (Primary Use Case)
 The tool operates as a SOPS wrapper via `RunWrapper()` function:
-- Reads `SAKURACLOUD_KMS_KEY_ID` environment variable (12-digit Sakura Cloud resource ID as string)
+- Reads `SAKURA_KMS_KEY_ID` environment variable (12-digit Sakura Cloud resource ID as string)
 - Starts HTTP server on `127.0.0.1:8200` in background
 - Waits for server health check (30 retries × 100ms)
 - Automatically sets `SOPS_VAULT_URIS=http://127.0.0.1:8200/v1/transit/encrypt/{key_id}` environment variable
@@ -108,7 +108,7 @@ goreleaser build --snapshot --clean
 ## Important Design Decisions
 
 ### Why Wrapper Mode?
-The wrapper approach allows dynamic configuration based on `SAKURACLOUD_KMS_KEY_ID` by automatically setting the `SOPS_VAULT_URIS` environment variable.
+The wrapper approach allows dynamic configuration based on `SAKURA_KMS_KEY_ID` by automatically setting the `SOPS_VAULT_URIS` environment variable.
 
 ### Why Use SOPS_VAULT_URIS?
 SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Transit Engine URIs. Using this environment variable instead of command-line flags prevents issues with argument ordering when executing SOPS.
@@ -122,7 +122,7 @@ SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Tran
 ### Constants
 - `VaultPrefix = "vault:v1:"` - Required by SOPS for Vault Transit Engine compatibility
 - `KeyIDPathParam = "key_id"` - URL path parameter name
-- `EnvKeyID = "SAKURACLOUD_KMS_KEY_ID"` - Environment variable for KMS resource ID
+- `SAKURA_KMS_KEY_ID` - Environment variable for KMS resource ID (defined by the `env` struct tag in `env.go`; the legacy `SAKURACLOUD_KMS_KEY_ID` is still accepted as a fallback)
 - `ServerAddr = "127.0.0.1:8200"` - Standard Vault server address (localhost only)
 
 ## Go Version

@@ -159,7 +159,7 @@ func TestSakumockSOPS(t *testing.T) {
 		k, v, _ := strings.Cut(kv, "=")
 		t.Setenv(k, v)
 	}
-	t.Setenv("SAKURACLOUD_KMS_KEY_ID", sakumockKeyID)
+	t.Setenv("SAKURA_KMS_KEY_ID", sakumockKeyID)
 	t.Setenv("SSK_SERVER_ADDR", freeAddr(t))
 	t.Setenv("SSK_COMMAND", "sops")
 

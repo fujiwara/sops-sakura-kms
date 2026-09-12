@@ -83,10 +83,10 @@ export SAKURA_ACCESS_TOKEN_SECRET="your-access-token-secret"
 export SAKURA_KMS_KEY_ID="123456789012"
 ```
 
-**Note:** For backward compatibility, the following alternative environment variable names are also supported. If both are set, `SAKURA_*` takes priority.
+**Note:** The legacy `SAKURACLOUD_*` names are still accepted for backward compatibility, but new configurations should use the `SAKURA_*` names, which match the current Sakura Cloud SDK. If both are set, `SAKURA_*` takes priority.
 
-| Primary (Recommended) | Alternative |
-|----------------------|-------------|
+| Primary (Recommended) | Legacy |
+|----------------------|--------|
 | `SAKURA_ACCESS_TOKEN` | `SAKURACLOUD_ACCESS_TOKEN` |
 | `SAKURA_ACCESS_TOKEN_SECRET` | `SAKURACLOUD_ACCESS_TOKEN_SECRET` |
 | `SAKURA_KMS_KEY_ID` | `SAKURACLOUD_KMS_KEY_ID` |

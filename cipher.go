@@ -26,7 +26,7 @@ type SakuraKMS struct {
 }
 
 // NewSakuraKMS creates a new SakuraKMS instance.
-// It reads credentials from environment variables (SAKURACLOUD_ACCESS_TOKEN, SAKURACLOUD_ACCESS_TOKEN_SECRET).
+// It reads credentials from environment variables (SAKURA_ACCESS_TOKEN, SAKURA_ACCESS_TOKEN_SECRET).
 func NewSakuraKMS() (*SakuraKMS, error) {
 	var sc saclient.Client
 	if err := sc.SetEnviron(os.Environ()); err != nil {

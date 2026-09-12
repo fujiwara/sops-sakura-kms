@@ -42,7 +42,7 @@ func TestRunWrapperExitCode(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			t.Setenv("SAKURACLOUD_KMS_KEY_ID", "test-key-id")
+			t.Setenv("SAKURA_KMS_KEY_ID", "test-key-id")
 			t.Setenv("SSK_COMMAND", tt.command)
 
 			exitCode, err := ssk.RunWrapper(context.Background(), tt.args)
@@ -57,7 +57,7 @@ func TestRunWrapperExitCode(t *testing.T) {
 }
 
 func TestRunWrapperEmptyKeyID(t *testing.T) {
-	t.Setenv("SAKURACLOUD_KMS_KEY_ID", "")
+	t.Setenv("SAKURA_KMS_KEY_ID", "")
 	t.Setenv("SSK_COMMAND", "sh")
 
 	t.Run("success without key ID", func(t *testing.T) {

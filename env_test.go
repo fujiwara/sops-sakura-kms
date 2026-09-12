@@ -10,10 +10,10 @@ import (
 )
 
 var envSet = map[string]string{
-	"SAKURACLOUD_KMS_KEY_ID": "example-key-id-2",
-	"SSK_SERVER_ADDR":        "192.168.0.1:8200",
-	"SSK_COMMAND":            "/usr/local/bin/sops",
-	"SSK_SERVER_ONLY":        "true",
+	"SAKURA_KMS_KEY_ID": "example-key-id-2",
+	"SSK_SERVER_ADDR":   "192.168.0.1:8200",
+	"SSK_COMMAND":       "/usr/local/bin/sops",
+	"SSK_SERVER_ONLY":   "true",
 }
 
 func TestParseEnv(t *testing.T) {
@@ -28,7 +28,7 @@ func TestParseEnv(t *testing.T) {
 	if diff := cmp.Diff(&ssk.Env{
 		ServerAddr: os.Getenv("SSK_SERVER_ADDR"),
 		Command:    os.Getenv("SSK_COMMAND"),
-		KMSKeyID:   os.Getenv("SAKURACLOUD_KMS_KEY_ID"),
+		KMSKeyID:   os.Getenv("SAKURA_KMS_KEY_ID"),
 		ServerOnly: serverOnly,
 	}, e); diff != "" {
 		t.Errorf("parsed env mismatch (-want +got):\n%s", diff)
@@ -36,7 +36,7 @@ func TestParseEnv(t *testing.T) {
 }
 
 func TestParseEnvDefault(t *testing.T) {
-	t.Setenv("SAKURACLOUD_KMS_KEY_ID", "default-key-id")
+	t.Setenv("SAKURA_KMS_KEY_ID", "default-key-id")
 	e, err := ssk.LoadEnv()
 	if err != nil {
 		t.Fatalf("failed to load environment variables: %v", err)
@@ -44,7 +44,7 @@ func TestParseEnvDefault(t *testing.T) {
 	if diff := cmp.Diff(&ssk.Env{
 		ServerAddr: "127.0.0.1:8200",
 		Command:    "sops",
-		KMSKeyID:   os.Getenv("SAKURACLOUD_KMS_KEY_ID"),
+		KMSKeyID:   os.Getenv("SAKURA_KMS_KEY_ID"),
 		ServerOnly: false,
 	}, e); diff != "" {
 		t.Errorf("parsed env mismatch (-want +got):\n%s", diff)
@@ -52,7 +52,7 @@ func TestParseEnvDefault(t *testing.T) {
 }
 
 func TestParseEnvEmptyKeyID(t *testing.T) {
-	t.Setenv("SAKURACLOUD_KMS_KEY_ID", "")
+	t.Setenv("SAKURA_KMS_KEY_ID", "")
 	e, err := ssk.LoadEnv()
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -74,7 +74,7 @@ func TestLoadEnv(t *testing.T) {
 		}
 		serverOnly, _ := strconv.ParseBool(envSet["SSK_SERVER_ONLY"])
 		if diff := cmp.Diff(&ssk.Env{
-			KMSKeyID:   envSet["SAKURACLOUD_KMS_KEY_ID"],
+			KMSKeyID:   envSet["SAKURA_KMS_KEY_ID"],
 			ServerOnly: serverOnly,
 			ServerAddr: envSet["SSK_SERVER_ADDR"],
 			Command:    envSet["SSK_COMMAND"],
@@ -84,7 +84,7 @@ func TestLoadEnv(t *testing.T) {
 	})
 
 	t.Run("default values", func(t *testing.T) {
-		t.Setenv("SAKURACLOUD_KMS_KEY_ID", "test-key-id")
+		t.Setenv("SAKURA_KMS_KEY_ID", "test-key-id")
 
 		env, err := ssk.LoadEnv()
 		if err != nil {
@@ -101,7 +101,7 @@ func TestLoadEnv(t *testing.T) {
 	})
 
 	t.Run("empty key ID", func(t *testing.T) {
-		t.Setenv("SAKURACLOUD_KMS_KEY_ID", "")
+		t.Setenv("SAKURA_KMS_KEY_ID", "")
 		env, err := ssk.LoadEnv()
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -112,7 +112,7 @@ func TestLoadEnv(t *testing.T) {
 	})
 
 	t.Run("invalid boolean value", func(t *testing.T) {
-		t.Setenv("SAKURACLOUD_KMS_KEY_ID", "test-key-id")
+		t.Setenv("SAKURA_KMS_KEY_ID", "test-key-id")
 		t.Setenv("SSK_SERVER_ONLY", "invalid")
 
 		_, err := ssk.LoadEnv()
@@ -121,19 +121,19 @@ func TestLoadEnv(t *testing.T) {
 		}
 	})
 
-	t.Run("SAKURA_KMS_KEY_ID only", func(t *testing.T) {
-		t.Setenv("SAKURA_KMS_KEY_ID", "sakura-key-id")
+	t.Run("legacy SAKURACLOUD_KMS_KEY_ID only", func(t *testing.T) {
+		t.Setenv("SAKURACLOUD_KMS_KEY_ID", "sakuracloud-key-id")
 
 		env, err := ssk.LoadEnv()
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if env.KMSKeyID != "sakura-key-id" {
-			t.Errorf("KMSKeyID = %q, want %q", env.KMSKeyID, "sakura-key-id")
+		if env.KMSKeyID != "sakuracloud-key-id" {
+			t.Errorf("KMSKeyID = %q, want %q", env.KMSKeyID, "sakuracloud-key-id")
 		}
 	})
 
-	t.Run("SAKURA_KMS_KEY_ID takes priority over SAKURACLOUD_KMS_KEY_ID", func(t *testing.T) {
+	t.Run("SAKURA_KMS_KEY_ID takes priority over legacy SAKURACLOUD_KMS_KEY_ID", func(t *testing.T) {
 		t.Setenv("SAKURA_KMS_KEY_ID", "sakura-key-id")
 		t.Setenv("SAKURACLOUD_KMS_KEY_ID", "sakuracloud-key-id")
 
