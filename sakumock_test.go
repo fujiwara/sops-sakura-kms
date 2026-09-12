@@ -163,11 +163,16 @@ func TestSakumockSOPS(t *testing.T) {
 	t.Setenv("SSK_SERVER_ADDR", freeAddr(t))
 	t.Setenv("SSK_COMMAND", "sops")
 
+	original := []byte("foo:\n  bar: \"BAR\"\n  description: \"This is bar\"\n")
 	dir := t.TempDir()
+	plain := filepath.Join(dir, "test.yaml")
 	encrypted := filepath.Join(dir, "test.enc.yaml")
 	decrypted := filepath.Join(dir, "test.dec.yaml")
+	if err := os.WriteFile(plain, original, 0o600); err != nil {
+		t.Fatalf("failed to write plaintext file: %v", err)
+	}
 
-	exitCode, err := ssk.RunWrapper(t.Context(), []string{"-e", "--output", encrypted, "test.yaml"})
+	exitCode, err := ssk.RunWrapper(t.Context(), []string{"-e", "--output", encrypted, plain})
 	if err != nil {
 		t.Fatalf("sops -e failed: %v", err)
 	}
@@ -195,10 +200,6 @@ func TestSakumockSOPS(t *testing.T) {
 	decBytes, err := os.ReadFile(decrypted)
 	if err != nil {
 		t.Fatalf("failed to read decrypted file: %v", err)
-	}
-	original, err := os.ReadFile("test.yaml")
-	if err != nil {
-		t.Fatalf("failed to read test.yaml: %v", err)
 	}
 	// sops re-serializes YAML on output (e.g. drops quotes), so compare parsed values.
 	if diff := cmp.Diff(parseYAML(t, original), parseYAML(t, decBytes)); diff != "" {
