@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.6.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.5.1...v0.6.0) - 2026-09-12
+
+- Migrate to sacloud-sdk-go and add sakumock integration tests by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/86
+- Bump GitHub Actions in the release workflow by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/88
+- Run CI once per change and test on Go 1.26 and 1.27 by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/89
+
 ## [v0.5.1](https://github.com/fujiwara/sops-sakura-kms/compare/v0.5.0...v0.5.1) - 2026-05-13
 - Improve signal handling for sops exec-env and editor sub-processes by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/72
 - Bump golang.org/x/sys from 0.41.0 to 0.44.0 by @dependabot[bot] in https://github.com/fujiwara/sops-sakura-kms/pull/71
