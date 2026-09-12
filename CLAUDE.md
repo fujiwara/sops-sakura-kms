@@ -36,7 +36,7 @@ The tool operates as a SOPS wrapper via `RunWrapper()` function:
   - `DecryptHandlerFunc(cipher)`: Decrypt endpoint handler
   - `waitForServer()`: Polls health endpoint until ready
 - **cipher.go**: `Cipher` interface and `SakuraKMS` implementation
-  - Uses `github.com/sacloud/kms-api-go` for Sakura Cloud KMS API
+  - Uses `github.com/sacloud/sacloud-sdk-go/api/kms` for Sakura Cloud KMS API
   - Encrypts with AES-256-GCM algorithm
 - **types.go**: Vault Transit Engine compatible request/response types
   - All plaintext/ciphertext are base64-encoded strings for Vault API compatibility
@@ -121,4 +121,4 @@ SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Tran
 
 ## Go Version
 
-This project uses Go 1.24+ (as specified in go.mod). CI tests against Go 1.23 and 1.24.
+This project uses Go 1.26+ (as specified in go.mod, required by sacloud-sdk-go). CI tests against Go 1.26.
