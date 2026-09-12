@@ -62,7 +62,7 @@ go test -v ./...       # Run all tests with verbose output
 go test -race ./...    # Run tests with race detector (used in CI)
 ```
 
-Set `KEY_ID` environment variable to run integration tests that actually call Sakura Cloud KMS API.
+Integration tests run against [sakumock](https://github.com/sacloud/sakumock) (in-process Sakura Cloud KMS mock) by default. Set `KEY_ID` environment variable to also run the test that actually calls Sakura Cloud KMS API.
 
 ### Install
 ```bash
@@ -88,6 +88,11 @@ goreleaser build --snapshot --clean
 - **wrapper_test.go**: `RunWrapper()` function tests
   - Tests environment variable validation
   - Does not test full SOPS integration (requires SOPS binary)
+- **sakumock_test.go**: Integration tests using `github.com/sacloud/sakumock/kms`
+  - Starts an in-process mock KMS server with a fixed key ID (`123456789012`)
+  - Tests `SakuraKMS` encrypt/decrypt, `RunServer()` via the Vault API client, and
+    end-to-end `RunWrapper()` with the real `sops` binary (skipped if `sops` is not in `PATH`)
+  - No credentials required; `SAKURA_ENDPOINTS_KMS` points sacloud-sdk-go at the mock
 - **kms_test.go**: Integration tests with actual Sakura Cloud KMS
   - Requires `KEY_ID` environment variable (12-digit resource ID)
   - Skipped if `KEY_ID` is not set
@@ -95,6 +100,7 @@ goreleaser build --snapshot --clean
 
 ### Key Testing Principles
 - Mock cipher for unit tests (no external dependencies)
+- sakumock for integration tests (no network access or credentials)
 - All tests use `NewMux()` to create handlers consistently
 - Integration tests can be skipped without blocking development
 - Error handling is thoroughly tested (invalid JSON, missing prefix, etc.)

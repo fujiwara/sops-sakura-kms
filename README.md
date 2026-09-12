@@ -332,6 +332,8 @@ go test ./...
 KEY_ID=123456789012 go test ./...
 ```
 
+Integration tests use [sakumock](https://github.com/sacloud/sakumock), an in-process mock of the Sakura Cloud KMS API, so they run without credentials. The end-to-end test that runs the real `sops` binary through the wrapper is skipped when `sops` is not found in `PATH`.
+
 ### Building
 
 ```bash
