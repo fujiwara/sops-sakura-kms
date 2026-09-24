@@ -2,9 +2,12 @@ package ssk
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
+	"github.com/ogen-go/ogen/validate"
 	"github.com/sacloud/sacloud-sdk-go/api/kms"
 	v1 "github.com/sacloud/sacloud-sdk-go/api/kms/apis/v1"
 	"github.com/sacloud/sacloud-sdk-go/common/saclient"
@@ -18,6 +21,34 @@ type Cipher interface {
 	// Decrypt decrypts ciphertext using the specified key ID.
 	// Accepts base64-encoded ciphertext string and returns plaintext bytes.
 	Decrypt(ctx context.Context, keyID string, ciphertext string) ([]byte, error)
+}
+
+// StatusError is an error that carries the HTTP status code to be returned
+// to the client of the Vault Transit Engine compatible API.
+type StatusError struct {
+	StatusCode int
+	Err        error
+}
+
+func (e *StatusError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *StatusError) Unwrap() error {
+	return e.Err
+}
+
+// wrapKMSError wraps err with StatusError when Sakura Cloud KMS API returned
+// a 4xx status code (e.g. 401 for missing credentials). Such errors are not
+// retryable, so they are propagated to the client as-is instead of 500, which
+// Vault API clients (SOPS) would retry.
+func wrapKMSError(err error) error {
+	if e, ok := errors.AsType[*validate.UnexpectedStatusCodeError](err); ok {
+		if e.StatusCode >= http.StatusBadRequest && e.StatusCode < http.StatusInternalServerError {
+			return &StatusError{StatusCode: e.StatusCode, Err: err}
+		}
+	}
+	return err
 }
 
 // SakuraKMS implements Cipher interface using Sakura Cloud KMS.
@@ -58,7 +89,7 @@ func (c *SakuraKMS) Encrypt(ctx context.Context, keyID string, plaintext []byte)
 	keyOp := kms.NewKeyOp(c.client)
 	ciphertext, err := keyOp.Encrypt(ctx, keyID, plaintext, v1.KeyEncryptAlgoEnumAes256Gcm)
 	if err != nil {
-		return "", fmt.Errorf("failed to encrypt: %w", err)
+		return "", wrapKMSError(fmt.Errorf("failed to encrypt: %w", err))
 	}
 	return ciphertext, nil
 }
@@ -68,7 +99,7 @@ func (c *SakuraKMS) Decrypt(ctx context.Context, keyID string, ciphertext string
 	keyOp := kms.NewKeyOp(c.client)
 	plaintext, err := keyOp.Decrypt(ctx, keyID, ciphertext)
 	if err != nil {
-		return nil, fmt.Errorf("failed to decrypt: %w", err)
+		return nil, wrapKMSError(fmt.Errorf("failed to decrypt: %w", err))
 	}
 	return plaintext, nil
 }

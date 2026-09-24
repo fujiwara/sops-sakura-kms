@@ -3,7 +3,9 @@ package ssk_test
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -88,6 +90,51 @@ func TestSakumockEncryptDecrypt(t *testing.T) {
 
 	if _, err := c.Decrypt(t.Context(), "999999999999", ciphertext); err == nil {
 		t.Error("decrypt with unknown key ID should fail")
+	}
+}
+
+// TestSakumockUnauthorized verifies that a 401 from KMS is propagated to the
+// Vault API client as 401 (not 500), so the client does not retry.
+func TestSakumockUnauthorized(t *testing.T) {
+	srv := kms.NewTestServer(kms.Config{
+		Keys:  map[string]string{sakumockKeyID: "sops-sakura-kms-test-secret"},
+		Fault: []string{"401:1"},
+	})
+	t.Cleanup(srv.Close)
+	addr := freeAddr(t)
+
+	addEnv, shutdown, err := ssk.RunServer(t.Context(), addr, sakumockKeyID, ssk.WithClient(newSakumockClient(t, srv.TestURL())))
+	if err != nil {
+		t.Fatalf("RunServer failed: %v", err)
+	}
+	t.Cleanup(func() { _ = shutdown(context.Background()) })
+
+	config := api.DefaultConfig()
+	config.Address = addEnv["VAULT_ADDR"]
+	client, err := api.NewClient(config)
+	if err != nil {
+		t.Fatalf("failed to create vault client: %v", err)
+	}
+	client.SetToken(addEnv["VAULT_TOKEN"])
+
+	tests := []struct {
+		path string
+		data map[string]any
+	}{
+		{"transit/encrypt/" + sakumockKeyID, map[string]any{"plaintext": base64.StdEncoding.EncodeToString([]byte("foo"))}},
+		{"transit/decrypt/" + sakumockKeyID, map[string]any{"ciphertext": ssk.VaultPrefix + "Zm9v"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			_, err := client.Logical().WriteWithContext(t.Context(), tt.path, tt.data)
+			respErr, ok := errors.AsType[*api.ResponseError](err)
+			if !ok {
+				t.Fatalf("expected *api.ResponseError, got %v", err)
+			}
+			if respErr.StatusCode != http.StatusUnauthorized {
+				t.Errorf("status code = %d, want %d", respErr.StatusCode, http.StatusUnauthorized)
+			}
+		})
 	}
 }
 

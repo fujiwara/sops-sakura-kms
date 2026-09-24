@@ -246,6 +246,15 @@ func errorResponse(w http.ResponseWriter, err error, status int) {
 	jsonResponse(w, status, res)
 }
 
+// cipherErrorStatus returns the HTTP status code for an error returned by Cipher.
+// It returns the status code of StatusError if present, otherwise 500.
+func cipherErrorStatus(err error) int {
+	if e, ok := errors.AsType[*StatusError](err); ok {
+		return e.StatusCode
+	}
+	return http.StatusInternalServerError
+}
+
 // EncryptHandlerFunc returns an HTTP handler for Vault Transit Engine encrypt endpoint.
 func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -264,7 +273,7 @@ func EncryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 		}
 		ciphertext, err := cipher.Encrypt(r.Context(), keyID, plaintext)
 		if err != nil {
-			errorResponse(w, err, http.StatusInternalServerError)
+			errorResponse(w, err, cipherErrorStatus(err))
 			return
 		}
 		res := &VaultEncryptResponse{
@@ -291,7 +300,7 @@ func DecryptHandlerFunc(cipher Cipher) func(w http.ResponseWriter, r *http.Reque
 		}
 		plaintext, err := cipher.Decrypt(r.Context(), keyID, body)
 		if err != nil {
-			errorResponse(w, err, http.StatusInternalServerError)
+			errorResponse(w, err, cipherErrorStatus(err))
 			return
 		}
 		// Encode plaintext as base64 for response
