@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -233,5 +235,61 @@ func TestHealthCheck(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Errorf("status code = %d, want %d", rec.Code, http.StatusOK)
+	}
+}
+
+// errorCipher is a Cipher that always returns the given error.
+type errorCipher struct {
+	err error
+}
+
+func (m *errorCipher) Encrypt(ctx context.Context, keyID string, plaintext []byte) (string, error) {
+	return "", m.err
+}
+
+func (m *errorCipher) Decrypt(ctx context.Context, keyID string, ciphertext string) ([]byte, error) {
+	return nil, m.err
+}
+
+func TestHandlerCipherErrorStatus(t *testing.T) {
+	tests := []struct {
+		name       string
+		err        error
+		wantStatus int
+	}{
+		{
+			name:       "generic error",
+			err:        errors.New("something wrong"),
+			wantStatus: http.StatusInternalServerError,
+		},
+		{
+			name:       "unauthorized",
+			err:        fmt.Errorf("wrapped: %w", &ssk.StatusError{StatusCode: http.StatusUnauthorized, Err: errors.New("unauthorized")}),
+			wantStatus: http.StatusUnauthorized,
+		},
+	}
+	requests := []struct {
+		path string
+		body any
+	}{
+		{"/v1/transit/encrypt/test-key", ssk.VaultEncryptRequest{Plaintext: base64.StdEncoding.EncodeToString([]byte("foo"))}},
+		{"/v1/transit/decrypt/test-key", ssk.VaultDecryptRequest{Ciphertext: ssk.VaultPrefix + "Zm9v"}},
+	}
+	for _, tt := range tests {
+		mux := ssk.NewMux(&errorCipher{err: tt.err})
+		for _, r := range requests {
+			t.Run(tt.name+" "+r.path, func(t *testing.T) {
+				body, err := json.Marshal(r.body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				req := httptest.NewRequest("PUT", r.path, bytes.NewReader(body))
+				rec := httptest.NewRecorder()
+				mux.ServeHTTP(rec, req)
+				if rec.Code != tt.wantStatus {
+					t.Errorf("status code = %d, want %d", rec.Code, tt.wantStatus)
+				}
+			})
+		}
 	}
 }

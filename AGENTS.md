@@ -114,6 +114,7 @@ The wrapper approach allows dynamic configuration based on `SAKURA_KMS_KEY_ID` b
 SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Transit Engine URIs. Using this environment variable instead of command-line flags prevents issues with argument ordering when executing SOPS.
 
 ### Error Handling Best Practices
+- 4xx errors from Sakura Cloud KMS API (e.g. 401 without credentials) are returned to the client with the same status code via `StatusError`; other cipher errors are returned as 500. Vault API clients (SOPS) retry on 5xx, so non-retryable errors must not be 500
 - JSON encoding errors in response handlers are logged but not fatal (connection may be closed)
 - Server startup errors are captured via channel to detect port conflicts
 - `http.ErrServerClosed` is ignored (normal shutdown)
