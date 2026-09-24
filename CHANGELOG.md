@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.6.1](https://github.com/fujiwara/sops-sakura-kms/compare/v0.6.0...v0.6.1) - 2026-09-24
+
+- Rename CLAUDE.md to AGENTS.md by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/90
+- Propagate 4xx errors from Sakura Cloud KMS to clients by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/92
+
 ## [v0.6.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.5.1...v0.6.0) - 2026-09-12
 
 - Migrate to sacloud-sdk-go and add sakumock integration tests by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/86
