@@ -99,7 +99,8 @@ You can customize the behavior with these optional environment variables:
 # Run server-only mode without executing SOPS (default: false)
 export SSK_SERVER_ONLY=true
 
-# Server listen address (default: 127.0.0.1:8200)
+# Server listen address
+# (default: an ephemeral port on 127.0.0.1, or 127.0.0.1:8200 in server-only mode)
 export SSK_SERVER_ADDR="127.0.0.1:8200"
 
 # Command to execute (default: sops)
@@ -123,11 +124,21 @@ sops-sakura-kms secrets.enc.yaml
 
 ### How it works
 
-1. `sops-sakura-kms` starts a local Vault Transit Engine compatible HTTP server on `127.0.0.1:8200`
-2. Sets required environment variables (`VAULT_ADDR`, `VAULT_TOKEN`)
+1. `sops-sakura-kms` starts a local Vault Transit Engine compatible HTTP server on an ephemeral port of `127.0.0.1`
+2. Sets required environment variables (`VAULT_ADDR`, `VAULT_AGENT_ADDR`, `VAULT_TOKEN`)
 3. If `SAKURA_KMS_KEY_ID` is set, automatically sets the `SOPS_VAULT_URIS` environment variable to `http://127.0.0.1:8200/v1/transit/encrypt/{key_id}`
 4. Executes SOPS with the configured environment
 5. The server handles encryption/decryption requests from SOPS using Sakura Cloud KMS
+
+### Running Multiple Processes Concurrently
+
+SOPS records the Vault address (`http://127.0.0.1:8200`) in encrypted files and connects to it on decryption. However, the Vault API client used by SOPS connects to `VAULT_AGENT_ADDR` instead of the recorded address when the variable is set.
+
+`sops-sakura-kms` uses this behavior: it listens on an ephemeral port and sets `VAULT_AGENT_ADDR` to the actual listen address, while the address recorded in newly encrypted files remains `http://127.0.0.1:8200`. So multiple `sops-sakura-kms` processes can run on the same host at once, and existing files encrypted with `127.0.0.1:8200` can be decrypted as before.
+
+If `SSK_SERVER_ADDR` is set, the server listens on that address and the address is recorded in newly encrypted files (the previous behavior). `VAULT_AGENT_ADDR` is set in this case too.
+
+**Note**: Since `VAULT_AGENT_ADDR` redirects all Vault requests to the local server, use plain `sops` (not `sops-sakura-kms`) for files encrypted with a real HashiCorp Vault server.
 
 ### Exit Code
 
@@ -274,7 +285,8 @@ func main() {
 	ctx := context.Background()
 
 	// Start Vault Transit Engine compatible server
-	addEnv, shutdown, err := ssk.RunServer(ctx, "127.0.0.1:8200", os.Getenv("SAKURA_KMS_KEY_ID"))
+	// Listen on an ephemeral port
+	addEnv, shutdown, err := ssk.RunServer(ctx, "127.0.0.1:0", os.Getenv("SAKURA_KMS_KEY_ID"))
 	if err != nil {
 		panic(err)
 	}
@@ -307,14 +319,14 @@ func RunServer(ctx context.Context, addr, keyID string, opts ...Option) (map[str
 
 **Parameters:**
 - `ctx`: Context for server operations
-- `addr`: Server listen address (e.g., `"127.0.0.1:8200"`)
+- `addr`: Server listen address (e.g., `"127.0.0.1:8200"`). If the port is `0`, the server listens on an ephemeral port and `SOPS_VAULT_URIS` points to `127.0.0.1:8200` (`ssk.DefaultServerAddr`)
 - `keyID`: Sakura Cloud KMS resource ID (12-digit number)
 - `opts`: Functional options:
   - `WithClient(saclient.ClientAPI)`: Use a pre-configured saclient instead of environment variables
   - `WithCipher(Cipher)`: Use a custom Cipher implementation (for testing)
 
 **Returns:**
-- `map[string]string`: Environment variables for SOPS (`VAULT_ADDR`, `VAULT_TOKEN`, and `SOPS_VAULT_URIS` if `keyID` is non-empty)
+- `map[string]string`: Environment variables for SOPS (`VAULT_ADDR`, `VAULT_AGENT_ADDR`, `VAULT_TOKEN`, and `SOPS_VAULT_URIS` if `keyID` is non-empty). `VAULT_ADDR` and `VAULT_AGENT_ADDR` are the actual listen address
 - `func(context.Context) error`: Shutdown function to stop the server
 - `error`: Any error that occurred during startup
 

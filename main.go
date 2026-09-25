@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -22,6 +23,15 @@ import (
 const (
 	VaultPrefix    = "vault:v1:"
 	KeyIDPathParam = "key_id"
+
+	// DefaultServerAddr is the Vault address recorded in SOPS files when the
+	// server listens on an ephemeral port. It is also the listen address in
+	// server-only mode when SSK_SERVER_ADDR is not set.
+	DefaultServerAddr = "127.0.0.1:8200"
+
+	// ephemeralServerAddr is the listen address used by the wrapper when
+	// SSK_SERVER_ADDR is not set, so that multiple processes can run at once.
+	ephemeralServerAddr = "127.0.0.1:0"
 
 	// ExitCodeError is the exit code returned when an error occurs in the application.
 	ExitCodeError = 1
@@ -48,9 +58,9 @@ func healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // newServer creates a new HTTP server with Vault Transit Engine compatible API.
-func newServer(cipher Cipher, addr string) *http.Server {
+func newServer(cipher Cipher) *http.Server {
 	mux := NewMux(cipher)
-	return &http.Server{Addr: addr, Handler: mux}
+	return &http.Server{Handler: mux}
 }
 
 // RunWrapper starts a Vault Transit Engine compatible API server and executes a command.
@@ -64,14 +74,22 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 	}
 	slog.Debug("Parsed command-line arguments", "env", e)
 
-	slog.Info("Starting Vault-compatible API server for Sakura KMS", "key_id", e.KMSKeyID, "addr", e.ServerAddr)
+	addr := e.ServerAddr
+	if addr == "" {
+		if e.ServerOnly {
+			addr = DefaultServerAddr
+		} else {
+			addr = ephemeralServerAddr
+		}
+	}
 
 	// Start server
-	addEnv, shutdown, err := RunServer(ctx, e.ServerAddr, e.KMSKeyID)
+	addEnv, shutdown, err := RunServer(ctx, addr, e.KMSKeyID)
 	if err != nil {
 		return ExitCodeError, fmt.Errorf("failed to start server: %w", err)
 	}
 	defer shutdown(context.Background())
+	slog.Info("Started Vault-compatible API server for Sakura KMS", "key_id", e.KMSKeyID, "addr", addEnv["VAULT_AGENT_ADDR"])
 
 	if e.ServerOnly {
 		slog.Info("Server is running in server-only mode")
@@ -148,7 +166,15 @@ func WithClient(c saclient.ClientAPI) Option {
 	}
 }
 
-// RunServer starts the Vault Transit Engine compatible API server.
+// RunServer starts the Vault Transit Engine compatible API server listening on addr.
+//
+// If the port of addr is 0, the server listens on an ephemeral port, and
+// SOPS_VAULT_URIS points to DefaultServerAddr so that the address recorded in
+// SOPS files does not depend on the port. VAULT_AGENT_ADDR is always set to
+// the actual listen address; the Vault API client used by SOPS connects to it
+// instead of the address recorded in SOPS files. This allows multiple servers
+// to run on the same host at once.
+//
 // Without options, it uses Sakura Cloud KMS with credentials from environment variables.
 // Use WithCipher to provide a custom cipher, or WithClient to provide a pre-configured saclient.
 // Returns environment variables to configure SOPS, a shutdown function, and any error that occurred.
@@ -175,44 +201,40 @@ func RunServer(ctx context.Context, addr, keyID string, opts ...Option) (map[str
 	return runServer(ctx, addr, keyID, o.cipher)
 }
 
-func runServer(ctx context.Context, addr, keyID string, cipher Cipher) (map[string]string, func(context.Context) error, error) {
-	server := newServer(cipher, addr)
+func runServer(_ context.Context, addr, keyID string, cipher Cipher) (map[string]string, func(context.Context) error, error) {
+	host, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid server address %q: %w", addr, err)
+	}
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to listen on %s: %w", addr, err)
+	}
+
+	// The address recorded in SOPS files (SOPS_VAULT_URIS).
+	fileAddr := addr
+	if port == "0" {
+		fileAddr = DefaultServerAddr
+		_, port, _ = net.SplitHostPort(l.Addr().String())
+	}
+	listenAddr := net.JoinHostPort(host, port)
+
+	server := newServer(cipher)
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := server.Serve(l); err != nil && err != http.ErrServerClosed {
 			slog.Error("server error", "error", err)
 		}
 	}()
 
-	if err := waitForServer(ctx, fmt.Sprintf("http://%s/health", addr)); err != nil {
-		return nil, nil, fmt.Errorf("failed to start server: %w", err)
-	}
-
 	env := map[string]string{
-		"VAULT_ADDR":  "http://" + addr,
-		"VAULT_TOKEN": "dummy",
+		"VAULT_ADDR":       "http://" + listenAddr,
+		"VAULT_AGENT_ADDR": "http://" + listenAddr,
+		"VAULT_TOKEN":      "dummy",
 	}
 	if keyID != "" {
-		env["SOPS_VAULT_URIS"] = fmt.Sprintf("http://%s/v1/transit/encrypt/%s", addr, keyID)
+		env["SOPS_VAULT_URIS"] = fmt.Sprintf("http://%s/v1/transit/encrypt/%s", fileAddr, keyID)
 	}
 	return env, server.Shutdown, nil
-}
-
-func waitForServer(ctx context.Context, healthURL string) error {
-	interval := 100 * time.Millisecond
-	client := &http.Client{Timeout: interval}
-	for range 30 {
-		req, _ := http.NewRequestWithContext(ctx, "GET", healthURL, nil)
-		resp, err := client.Do(req)
-		if err == nil && resp.StatusCode == http.StatusOK {
-			resp.Body.Close()
-			return nil
-		}
-		if resp != nil {
-			resp.Body.Close()
-		}
-		time.Sleep(interval)
-	}
-	return fmt.Errorf("server did not become healthy")
 }
 
 // readRequest decodes JSON request body into the specified type.

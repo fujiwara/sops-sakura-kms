@@ -42,7 +42,7 @@ func TestParseEnvDefault(t *testing.T) {
 		t.Fatalf("failed to load environment variables: %v", err)
 	}
 	if diff := cmp.Diff(&ssk.Env{
-		ServerAddr: "127.0.0.1:8200",
+		ServerAddr: "",
 		Command:    "sops",
 		KMSKeyID:   os.Getenv("SAKURA_KMS_KEY_ID"),
 		ServerOnly: false,
@@ -93,7 +93,7 @@ func TestLoadEnv(t *testing.T) {
 		if diff := cmp.Diff(&ssk.Env{
 			KMSKeyID:   "test-key-id",
 			ServerOnly: false,
-			ServerAddr: "127.0.0.1:8200",
+			ServerAddr: "",
 			Command:    "sops",
 		}, env); diff != "" {
 			t.Errorf("LoadEnv mismatch (-want +got):\n%s", diff)
