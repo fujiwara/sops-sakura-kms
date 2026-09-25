@@ -326,7 +326,7 @@ func RunServer(ctx context.Context, addr, keyID string, opts ...Option) (map[str
   - `WithCipher(Cipher)`: Use a custom Cipher implementation (for testing)
 
 **Returns:**
-- `map[string]string`: Environment variables for SOPS (`VAULT_ADDR`, `VAULT_AGENT_ADDR`, `VAULT_TOKEN`, and `SOPS_VAULT_URIS` if `keyID` is non-empty). `VAULT_ADDR` and `VAULT_AGENT_ADDR` are the actual listen address
+- `map[string]string`: Environment variables for SOPS (`VAULT_ADDR`, `VAULT_AGENT_ADDR`, `VAULT_TOKEN`, and `SOPS_VAULT_URIS` if `keyID` is non-empty). `VAULT_ADDR` and `VAULT_AGENT_ADDR` are the actual listen address (an empty or unspecified host such as `:0` or `0.0.0.0` is replaced with the loopback address)
 - `func(context.Context) error`: Shutdown function to stop the server
 - `error`: Any error that occurred during startup
 

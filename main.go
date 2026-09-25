@@ -74,17 +74,8 @@ func RunWrapper(ctx context.Context, args []string) (int, error) {
 	}
 	slog.Debug("Parsed command-line arguments", "env", e)
 
-	addr := e.ServerAddr
-	if addr == "" {
-		if e.ServerOnly {
-			addr = DefaultServerAddr
-		} else {
-			addr = ephemeralServerAddr
-		}
-	}
-
 	// Start server
-	addEnv, shutdown, err := RunServer(ctx, addr, e.KMSKeyID)
+	addEnv, shutdown, err := RunServer(ctx, e.listenAddr(), e.KMSKeyID)
 	if err != nil {
 		return ExitCodeError, fmt.Errorf("failed to start server: %w", err)
 	}
@@ -171,7 +162,8 @@ func WithClient(c saclient.ClientAPI) Option {
 // If the port of addr is 0, the server listens on an ephemeral port, and
 // SOPS_VAULT_URIS points to DefaultServerAddr so that the address recorded in
 // SOPS files does not depend on the port. VAULT_AGENT_ADDR is always set to
-// the actual listen address; the Vault API client used by SOPS connects to it
+// the actual listen address (with a loopback host if the host of addr is empty
+// or unspecified); the Vault API client used by SOPS connects to it
 // instead of the address recorded in SOPS files. This allows multiple servers
 // to run on the same host at once.
 //
@@ -217,7 +209,8 @@ func runServer(_ context.Context, addr, keyID string, cipher Cipher) (map[string
 		fileAddr = DefaultServerAddr
 		_, port, _ = net.SplitHostPort(l.Addr().String())
 	}
-	listenAddr := net.JoinHostPort(host, port)
+	// The address clients on this host connect to (VAULT_ADDR, VAULT_AGENT_ADDR).
+	clientAddr := net.JoinHostPort(clientHost(host), port)
 
 	server := newServer(cipher)
 	go func() {
@@ -227,14 +220,30 @@ func runServer(_ context.Context, addr, keyID string, cipher Cipher) (map[string
 	}()
 
 	env := map[string]string{
-		"VAULT_ADDR":       "http://" + listenAddr,
-		"VAULT_AGENT_ADDR": "http://" + listenAddr,
+		"VAULT_ADDR":       "http://" + clientAddr,
+		"VAULT_AGENT_ADDR": "http://" + clientAddr,
 		"VAULT_TOKEN":      "dummy",
 	}
 	if keyID != "" {
 		env["SOPS_VAULT_URIS"] = fmt.Sprintf("http://%s/v1/transit/encrypt/%s", fileAddr, keyID)
 	}
 	return env, server.Shutdown, nil
+}
+
+// clientHost returns the host for clients on this host to connect to the
+// server listening on host. An empty or unspecified host (e.g. ":0",
+// "0.0.0.0:0", "[::]:0") is replaced with the loopback address.
+func clientHost(host string) string {
+	if host == "" {
+		return "127.0.0.1"
+	}
+	if ip := net.ParseIP(host); ip != nil && ip.IsUnspecified() {
+		if ip.To4() != nil {
+			return "127.0.0.1"
+		}
+		return "::1"
+	}
+	return host
 }
 
 // readRequest decodes JSON request body into the specified type.

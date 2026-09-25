@@ -72,3 +72,17 @@ func LoadEnv() (*Env, error) {
 
 	return env, nil
 }
+
+// listenAddr returns the address for the wrapper to listen on.
+// If ServerAddr is empty, it returns an ephemeral port address, or
+// DefaultServerAddr in server-only mode.
+func (e *Env) listenAddr() string {
+	switch {
+	case e.ServerAddr != "":
+		return e.ServerAddr
+	case e.ServerOnly:
+		return DefaultServerAddr
+	default:
+		return ephemeralServerAddr
+	}
+}

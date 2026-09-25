@@ -243,6 +243,33 @@ func TestSakumockRunServerEphemeralPort(t *testing.T) {
 	}
 }
 
+// TestRunServerUnspecifiedHost verifies that the client address is usable
+// when the listen address has an empty or unspecified host.
+func TestRunServerUnspecifiedHost(t *testing.T) {
+	for _, addr := range []string{":0", "0.0.0.0:0"} {
+		t.Run(addr, func(t *testing.T) {
+			addEnv, shutdown, err := ssk.RunServer(t.Context(), addr, sakumockKeyID, ssk.WithCipher(&ssk.SakuraKMS{}))
+			if err != nil {
+				t.Fatalf("RunServer failed: %v", err)
+			}
+			t.Cleanup(func() { _ = shutdown(context.Background()) })
+
+			agentAddr := addEnv["VAULT_AGENT_ADDR"]
+			if !strings.HasPrefix(agentAddr, "http://127.0.0.1:") {
+				t.Fatalf("VAULT_AGENT_ADDR = %q, want http://127.0.0.1:<port>", agentAddr)
+			}
+			resp, err := http.Get(agentAddr + "/health")
+			if err != nil {
+				t.Fatalf("health check failed: %v", err)
+			}
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("health status = %d, want %d", resp.StatusCode, http.StatusOK)
+			}
+		})
+	}
+}
+
 func TestRunServerAddrInUse(t *testing.T) {
 	l, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
