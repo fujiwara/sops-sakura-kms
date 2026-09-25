@@ -17,9 +17,9 @@ The tool automatically:
 ### Wrapper Mode (Primary Use Case)
 The tool operates as a SOPS wrapper via `RunWrapper()` function:
 - Reads `SAKURA_KMS_KEY_ID` environment variable (12-digit Sakura Cloud resource ID as string)
-- Starts HTTP server on `127.0.0.1:8200` in background
-- Waits for server health check (30 retries × 100ms)
+- Starts HTTP server on an ephemeral port of `127.0.0.1` in background (`SSK_SERVER_ADDR` overrides it; server-only mode defaults to `127.0.0.1:8200`)
 - Automatically sets `SOPS_VAULT_URIS=http://127.0.0.1:8200/v1/transit/encrypt/{key_id}` environment variable
+- Sets `VAULT_AGENT_ADDR` to the actual listen address. The Vault API client used by SOPS connects to `VAULT_AGENT_ADDR` instead of the address recorded in SOPS files, so multiple processes can run concurrently while files keep `127.0.0.1:8200`
 - Sets `VAULT_ADDR` and `VAULT_TOKEN` environment variables
 - Executes SOPS command with all original arguments
 
@@ -34,7 +34,6 @@ The tool operates as a SOPS wrapper via `RunWrapper()` function:
   - `RunWrapper(ctx, sopsArgs)`: Main wrapper function
   - `EncryptHandlerFunc(cipher)`: Encrypt endpoint handler
   - `DecryptHandlerFunc(cipher)`: Decrypt endpoint handler
-  - `waitForServer()`: Polls health endpoint until ready
 - **cipher.go**: `Cipher` interface and `SakuraKMS` implementation
   - Uses `github.com/sacloud/sacloud-sdk-go/api/kms` for Sakura Cloud KMS API
   - Encrypts with AES-256-GCM algorithm
@@ -116,15 +115,14 @@ SOPS supports the `SOPS_VAULT_URIS` environment variable to configure Vault Tran
 ### Error Handling Best Practices
 - 4xx errors from Sakura Cloud KMS API (e.g. 401 without credentials) are returned to the client with the same status code via `StatusError`; other cipher errors are returned as 500. Vault API clients (SOPS) retry on 5xx, so non-retryable errors must not be 500
 - JSON encoding errors in response handlers are logged but not fatal (connection may be closed)
-- Server startup errors are captured via channel to detect port conflicts
+- The listener is created synchronously with `net.Listen`, so port conflicts are returned as errors from `RunServer`
 - `http.ErrServerClosed` is ignored (normal shutdown)
-- Health check retries 30 times with 100ms intervals (max 3 seconds)
 
 ### Constants
 - `VaultPrefix = "vault:v1:"` - Required by SOPS for Vault Transit Engine compatibility
 - `KeyIDPathParam = "key_id"` - URL path parameter name
 - `SAKURA_KMS_KEY_ID` - Environment variable for KMS resource ID (defined by the `env` struct tag in `env.go`; the legacy `SAKURACLOUD_KMS_KEY_ID` is still accepted as a fallback)
-- `ServerAddr = "127.0.0.1:8200"` - Standard Vault server address (localhost only)
+- `DefaultServerAddr = "127.0.0.1:8200"` - Vault address recorded in SOPS files when listening on an ephemeral port, and the server-only mode default
 
 ## Go Version
 

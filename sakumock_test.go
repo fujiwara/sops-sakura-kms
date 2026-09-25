@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	ssk "github.com/fujiwara/sops-sakura-kms"
@@ -148,9 +150,13 @@ func TestSakumockRunServer(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = shutdown(context.Background()) })
 
-	wantURI := "http://" + addr + "/v1/transit/encrypt/" + sakumockKeyID
-	if got := addEnv["SOPS_VAULT_URIS"]; got != wantURI {
-		t.Errorf("SOPS_VAULT_URIS = %q, want %q", got, wantURI)
+	if diff := cmp.Diff(map[string]string{
+		"VAULT_ADDR":       "http://" + addr,
+		"VAULT_AGENT_ADDR": "http://" + addr,
+		"VAULT_TOKEN":      "dummy",
+		"SOPS_VAULT_URIS":  "http://" + addr + "/v1/transit/encrypt/" + sakumockKeyID,
+	}, addEnv); diff != "" {
+		t.Errorf("addEnv mismatch (-want +got):\n%s", diff)
 	}
 
 	config := api.DefaultConfig()
@@ -193,6 +199,150 @@ func TestSakumockRunServer(t *testing.T) {
 	}
 	if string(decrypted) != string(plaintext) {
 		t.Errorf("decrypted = %q, want %q", decrypted, plaintext)
+	}
+}
+
+// TestSakumockRunServerEphemeralPort verifies that with port 0 the server
+// listens on an ephemeral port while SOPS_VAULT_URIS points to the default
+// address, and that a Vault API client reaches the server via VAULT_AGENT_ADDR.
+func TestSakumockRunServerEphemeralPort(t *testing.T) {
+	serverURL := newSakumockKMS(t)
+
+	addEnv, shutdown, err := ssk.RunServer(t.Context(), "127.0.0.1:0", sakumockKeyID, ssk.WithClient(newSakumockClient(t, serverURL)))
+	if err != nil {
+		t.Fatalf("RunServer failed: %v", err)
+	}
+	t.Cleanup(func() { _ = shutdown(context.Background()) })
+
+	wantURI := "http://" + ssk.DefaultServerAddr + "/v1/transit/encrypt/" + sakumockKeyID
+	if got := addEnv["SOPS_VAULT_URIS"]; got != wantURI {
+		t.Errorf("SOPS_VAULT_URIS = %q, want %q", got, wantURI)
+	}
+	agentAddr := addEnv["VAULT_AGENT_ADDR"]
+	if agentAddr == "" || strings.HasSuffix(agentAddr, ":0") {
+		t.Fatalf("VAULT_AGENT_ADDR = %q, want an actual listen address", agentAddr)
+	}
+	if got := addEnv["VAULT_ADDR"]; got != agentAddr {
+		t.Errorf("VAULT_ADDR = %q, want %q", got, agentAddr)
+	}
+
+	// Emulate SOPS: the address comes from the file, the agent address from the environment.
+	t.Setenv("VAULT_AGENT_ADDR", agentAddr)
+	config := api.DefaultConfig()
+	config.Address = "http://" + ssk.DefaultServerAddr
+	client, err := api.NewClient(config)
+	if err != nil {
+		t.Fatalf("failed to create vault client: %v", err)
+	}
+	client.SetToken(addEnv["VAULT_TOKEN"])
+	_, err = client.Logical().WriteWithContext(t.Context(), "transit/encrypt/"+sakumockKeyID, map[string]any{
+		"plaintext": base64.StdEncoding.EncodeToString([]byte("foo")),
+	})
+	if err != nil {
+		t.Fatalf("encryption via VAULT_AGENT_ADDR failed: %v", err)
+	}
+}
+
+// TestRunServerUnspecifiedHost verifies that the client address is usable
+// when the listen address has an empty or unspecified host.
+func TestRunServerUnspecifiedHost(t *testing.T) {
+	for _, addr := range []string{":0", "0.0.0.0:0"} {
+		t.Run(addr, func(t *testing.T) {
+			addEnv, shutdown, err := ssk.RunServer(t.Context(), addr, sakumockKeyID, ssk.WithCipher(&ssk.SakuraKMS{}))
+			if err != nil {
+				t.Fatalf("RunServer failed: %v", err)
+			}
+			t.Cleanup(func() { _ = shutdown(context.Background()) })
+
+			agentAddr := addEnv["VAULT_AGENT_ADDR"]
+			if !strings.HasPrefix(agentAddr, "http://127.0.0.1:") {
+				t.Fatalf("VAULT_AGENT_ADDR = %q, want http://127.0.0.1:<port>", agentAddr)
+			}
+			resp, err := http.Get(agentAddr + "/health")
+			if err != nil {
+				t.Fatalf("health check failed: %v", err)
+			}
+			resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				t.Errorf("health status = %d, want %d", resp.StatusCode, http.StatusOK)
+			}
+		})
+	}
+}
+
+func TestRunServerAddrInUse(t *testing.T) {
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to listen: %v", err)
+	}
+	defer l.Close()
+
+	_, _, err = ssk.RunServer(t.Context(), l.Addr().String(), sakumockKeyID, ssk.WithCipher(&ssk.SakuraKMS{}))
+	if err == nil {
+		t.Fatal("RunServer on an address in use should fail")
+	}
+}
+
+// TestSakumockSOPSConcurrent runs multiple sops processes through RunWrapper
+// at once without SSK_SERVER_ADDR. Each wrapper listens on its own ephemeral
+// port, while the encrypted file records the default address.
+func TestSakumockSOPSConcurrent(t *testing.T) {
+	if _, err := exec.LookPath("sops"); err != nil {
+		t.Skip("sops binary is not found in PATH")
+	}
+	serverURL := newSakumockKMS(t)
+	for _, kv := range sakumockEnv(serverURL) {
+		k, v, _ := strings.Cut(kv, "=")
+		t.Setenv(k, v)
+	}
+	t.Setenv("SAKURA_KMS_KEY_ID", sakumockKeyID)
+	t.Setenv("SSK_SERVER_ADDR", "")
+	t.Setenv("SSK_COMMAND", "sops")
+
+	original := []byte("foo: bar\n")
+	dir := t.TempDir()
+	plain := filepath.Join(dir, "test.yaml")
+	encrypted := filepath.Join(dir, "test.enc.yaml")
+	if err := os.WriteFile(plain, original, 0o600); err != nil {
+		t.Fatalf("failed to write plaintext file: %v", err)
+	}
+	if exitCode, err := ssk.RunWrapper(t.Context(), []string{"-e", "--output", encrypted, plain}); err != nil || exitCode != 0 {
+		t.Fatalf("sops -e failed: exit code = %d, err = %v", exitCode, err)
+	}
+	encBytes, err := os.ReadFile(encrypted)
+	if err != nil {
+		t.Fatalf("failed to read encrypted file: %v", err)
+	}
+	if !strings.Contains(string(encBytes), "vault_address: http://"+ssk.DefaultServerAddr) {
+		t.Errorf("encrypted file does not record the default vault address:\n%s", encBytes)
+	}
+
+	const n = 3
+	var wg sync.WaitGroup
+	errs := make([]error, n)
+	for i := range n {
+		wg.Go(func() {
+			decrypted := filepath.Join(dir, fmt.Sprintf("test.dec.%d.yaml", i))
+			exitCode, err := ssk.RunWrapper(t.Context(), []string{"-d", "--output", decrypted, encrypted})
+			if err == nil && exitCode != 0 {
+				err = fmt.Errorf("exit code = %d", exitCode)
+			}
+			errs[i] = err
+		})
+	}
+	wg.Wait()
+	for i, err := range errs {
+		if err != nil {
+			t.Errorf("sops -d #%d failed: %v", i, err)
+			continue
+		}
+		decBytes, err := os.ReadFile(filepath.Join(dir, fmt.Sprintf("test.dec.%d.yaml", i)))
+		if err != nil {
+			t.Fatalf("failed to read decrypted file: %v", err)
+		}
+		if diff := cmp.Diff(parseYAML(t, original), parseYAML(t, decBytes)); diff != "" {
+			t.Errorf("decrypted content mismatch (-want +got):\n%s", diff)
+		}
 	}
 }
 
