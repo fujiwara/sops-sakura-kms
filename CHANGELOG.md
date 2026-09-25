@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.7.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.6.1...v0.7.0) - 2026-09-25
+
+- Listen on an ephemeral port by default to allow concurrent processes by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/93
+
 ## [v0.6.1](https://github.com/fujiwara/sops-sakura-kms/compare/v0.6.0...v0.6.1) - 2026-09-24
 
 - Rename CLAUDE.md to AGENTS.md by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/90
