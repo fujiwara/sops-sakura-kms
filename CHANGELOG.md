@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.7.1](https://github.com/fujiwara/sops-sakura-kms/compare/v0.7.0...v0.7.1) - 2026-10-30
+
+- Update sacloud-sdk-go to v0.5.0 by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/101
+
 ## [v0.7.0](https://github.com/fujiwara/sops-sakura-kms/compare/v0.6.1...v0.7.0) - 2026-09-25
 
 - Listen on an ephemeral port by default to allow concurrent processes by @fujiwara in https://github.com/fujiwara/sops-sakura-kms/pull/93
