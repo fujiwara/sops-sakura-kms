@@ -87,7 +87,7 @@ func newSakuraKMSFromClient(c saclient.ClientAPI) (*SakuraKMS, error) {
 // Encrypt encrypts plaintext using Sakura Cloud KMS with AES-256-GCM algorithm.
 func (c *SakuraKMS) Encrypt(ctx context.Context, keyID string, plaintext []byte) (string, error) {
 	keyOp := kms.NewKeyOp(c.client)
-	ciphertext, err := keyOp.Encrypt(ctx, keyID, plaintext, v1.KeyEncryptAlgoEnumAes256Gcm)
+	ciphertext, err := keyOp.Encrypt(ctx, keyID, plaintext, v1.EncryptionRequestAlgoAes256Gcm)
 	if err != nil {
 		return "", wrapKMSError(fmt.Errorf("failed to encrypt: %w", err))
 	}
